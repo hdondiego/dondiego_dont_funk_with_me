@@ -7,6 +7,7 @@ import edu.lewisu.cs.cpsc41000.common.labels.ActionLabel;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input.Keys;
+import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
@@ -21,6 +22,7 @@ public class DontFunkWithMe extends ApplicationAdapter {
 	int WIDTH, HEIGHT;
 	int[] player1Seq = {0,0,1,0,2,0,0,1,1,1,2,1};
 	ActionLabel player1Label, player2Label;
+	Music fightMusic;
 	
 	@Override
 	public void create () {
@@ -42,7 +44,9 @@ public class DontFunkWithMe extends ApplicationAdapter {
     float frameWidth, float frameHeight, int[] frameSequence, float animDelay)
 		 */
 		player1 = new AnimatedImageBasedScreenObject(player1Tex, 600, 130, 0, 0, 0, 10, 10, false, false, 32f, 32f, player1Seq, 0.1f);
-		
+		fightMusic = Gdx.audio.newMusic(Gdx.files.internal("audio/the_king_kb11_BSB.wav"));
+		fightMusic.setLooping(true);
+		fightMusic.play();
 	}
 
 	@Override
@@ -78,5 +82,6 @@ public class DontFunkWithMe extends ApplicationAdapter {
 	public void dispose () {
 		batch.dispose();
 		theKingMap.dispose();
+		fightMusic.dispose();
 	}
 }
