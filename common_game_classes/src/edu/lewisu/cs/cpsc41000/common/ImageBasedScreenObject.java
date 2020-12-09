@@ -17,7 +17,7 @@ public class ImageBasedScreenObject implements Collidable {
     protected boolean flipY;
     protected Polygon boundingPolygon;
     protected AnimationParameters animationParameters;
-
+    
     public void setAnimationParameters() {
         animationParameters = new AnimationParameters(getWidth(), getHeight(), null, 0);
     }
@@ -35,6 +35,10 @@ public class ImageBasedScreenObject implements Collidable {
         animationParameters = new AnimationParameters(frameWidth, frameHeight, frameSequence, delay);
         initBoundingPolygon();
         centerOriginGeometrically();
+    }
+    
+    public void setAnimationParameters(AnimationParameters currAnim) {
+    	this.animationParameters = currAnim;
     }
 
     public ImageBasedScreenObject(Texture tex) {
