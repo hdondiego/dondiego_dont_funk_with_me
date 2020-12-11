@@ -3,6 +3,7 @@ package edu.lewisu.cs.cpsc41000.common;
 import com.badlogic.gdx.graphics.Texture;
 
 public class AnimatedImageBasedScreenObject extends ImageBasedScreenObject {
+	
     public AnimatedImageBasedScreenObject(Texture tex, int xpos, int ypos, int xorigin, 
     int yorigin, int rotation, int scaleX, int scaleY, boolean flipX, boolean flipY,
     float frameWidth, float frameHeight, int[] frameSequence, float animDelay) {
@@ -42,7 +43,14 @@ public class AnimatedImageBasedScreenObject extends ImageBasedScreenObject {
             return super.getHeight();  // on the width of the image
         }
     }
+    public void setAnimationActive(boolean active) {
+        animationParameters.setActive(active);
+    }
+    public int getCurrentFrame() {
+    	return animationParameters.getCurrentFrame();
+    }
     public void resetAnimation() {
+        setAnimationActive(false);
         animationParameters.setCurrentFrame(0);  // at the end of a run
     }
     public void animate(float dt) {
@@ -50,5 +58,13 @@ public class AnimatedImageBasedScreenObject extends ImageBasedScreenObject {
         if (animationParameters.timeToChange()) {
             animationParameters.changeFrame();
         }
+    }
+    public void setDiscreteAnimation(boolean disc) {
+        animationParameters.setDiscrete(disc);
+        animationParameters.setActive(false);
+    }
+    public void startDiscreteAnimation() {
+        resetAnimation();
+        setAnimationActive(true);
     }
 }

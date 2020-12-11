@@ -22,23 +22,26 @@ import java.util.Timer;
 
 public class DontFunkWithMe extends ApplicationAdapter {
 	SpriteBatch batch;
-	Texture theKingMap, player1Tex, healthBar1, healthBar2; // player2Tex
-	AnimatedImageBasedScreenObject player1; // player2
-	ImageBasedScreenObjectDrawer drawer1;
+	Texture theKingMap, johnnyDTex, theKingTex, healthBar1, healthBar2; // player2Tex
+	AnimatedImageBasedScreenObject player1, player2;
+	ImageBasedScreenObjectDrawer drawer1, drawer2;
 	OrthographicCamera cam, titleCam;
 	int WIDTH, HEIGHT, seconds;
 	float FRAME_WIDTH, FRAME_HEIGHT, ANIM_DELAY;
-	int[] player1WalkSeq = {0,0,1,0,2,0}; // follows the order for each different movement
+	int[] player1WalkSeq = {0,0,1,0,2,0}; // follows the order for each different movement - only for Johnny Dansalot
 	int[] player1PunchSeq = {0,1,1,1,2,1};
 	int[] player1KickSeq = {0,2,1,2,2,2};
+	
+	int[] player2WalkSeq = {0,0,1,0,2,0,3,0}; // only for The King
 	ActionLabel player1Label, player2Label;//, countdownTimer;
 	Music fightMusic; // the background fight music
-	boolean movingLeft, isRoundOver;
+	boolean player1MovingLeft, isRoundOver, player2MovingLeft;
 	Timer timer;
 	TimerTask timerTask;
 	LabelStyle style = new LabelStyle();
 	Label countDownLabel;
-	AnimationParameters walkAnim, punchAnim, kickAnim, currAnim;
+	AnimationParameters johnnyDWalkAnim, johnnyDPunchAnim, johnnyDKickAnim, player1CurrAnim;
+	AnimationParameters theKingWalkAnim, player2CurrAnim;
 	
 	@Override
 	public void create () {
@@ -54,6 +57,7 @@ public class DontFunkWithMe extends ApplicationAdapter {
 		cam.update();
 		batch.setProjectionMatrix(cam.combined);
 		drawer1 = new ImageBasedScreenObjectDrawer(batch);
+		drawer2 = new ImageBasedScreenObjectDrawer(batch);
 		isRoundOver = false;
 		
 		// creating labels for each fighter on the top part of the screen - in this case, Johnny Dansalot (main character) and The King
@@ -89,14 +93,18 @@ public class DontFunkWithMe extends ApplicationAdapter {
 		};
 		
 		// instantiating the main character's sprite
-		player1Tex = new Texture("johnny_dansalot.png");
-		movingLeft = false;
-		player1 = new AnimatedImageBasedScreenObject(player1Tex, 600, 130, 0, 0, 0, 10, 10, movingLeft, false, FRAME_WIDTH, FRAME_HEIGHT, player1WalkSeq, ANIM_DELAY);
-		walkAnim = new AnimationParameters(FRAME_WIDTH, FRAME_HEIGHT, player1WalkSeq, ANIM_DELAY);
-		punchAnim = new AnimationParameters(FRAME_WIDTH, FRAME_HEIGHT, player1PunchSeq, ANIM_DELAY);
-		kickAnim = new AnimationParameters(FRAME_WIDTH, FRAME_HEIGHT, player1KickSeq, ANIM_DELAY);
-		currAnim = walkAnim;
+		johnnyDTex = new Texture("johnny_dansalot.png");
+		theKingTex = new Texture("the_king.png");
+		player1MovingLeft = false;
+		player2MovingLeft = false;
 		
+		player1 = new AnimatedImageBasedScreenObject(johnnyDTex, 600, 130, 0, 0, 0, 10, 10, player1MovingLeft, false, FRAME_WIDTH, FRAME_HEIGHT, player1WalkSeq, ANIM_DELAY);
+		johnnyDWalkAnim = new AnimationParameters(FRAME_WIDTH, FRAME_HEIGHT, player1WalkSeq, ANIM_DELAY);
+		johnnyDPunchAnim = new AnimationParameters(FRAME_WIDTH, FRAME_HEIGHT, player1PunchSeq, ANIM_DELAY);
+		johnnyDKickAnim = new AnimationParameters(FRAME_WIDTH, FRAME_HEIGHT, player1KickSeq, 0.1f); // 0.2f
+		player1CurrAnim = johnnyDWalkAnim;
+		
+		player2 = new AnimatedImageBasedScreenObject(theKingTex, 800, 130, 0, 0, 0, 10, 10, player2MovingLeft, false, FRAME_WIDTH, FRAME_HEIGHT, player2WalkSeq, ANIM_DELAY);
 		fightMusic.play();
 		start();
 		
@@ -128,45 +136,59 @@ public class DontFunkWithMe extends ApplicationAdapter {
 				
 		// move to the left
 		if (Gdx.input.isKeyPressed(Keys.A)) {
-			if (currAnim != walkAnim) {
-				player1.setAnimationParameters(walkAnim);
-				currAnim = walkAnim;
+			if (player1CurrAnim != johnnyDWalkAnim) {
+				player1.setDiscreteAnimation(false);
+				player1.setAnimationParameters(johnnyDWalkAnim);
+				player1CurrAnim = johnnyDWalkAnim;
 			}
-			movingLeft = true;
-			player1.setFlipX(movingLeft);
+			player1MovingLeft = true;
+			player1.setFlipX(player1MovingLeft);
 			player1.animate(dt);
 			player1.setXPos(player1.getXPos() - 5);
 		}
 		
 		// move to the right
 		if (Gdx.input.isKeyPressed(Keys.D)) {
-			if (currAnim != walkAnim) {
-				player1.setAnimationParameters(walkAnim);
-				currAnim = walkAnim;
+			if (player1CurrAnim != johnnyDWalkAnim) {
+				player1.setDiscreteAnimation(false);
+				player1.setAnimationParameters(johnnyDWalkAnim);
+				player1CurrAnim = johnnyDWalkAnim;
 			}
-			movingLeft = false;
-			player1.setFlipX(movingLeft);
+			player1MovingLeft = false;
+			player1.setFlipX(player1MovingLeft);
 			player1.animate(dt);
 			player1.setXPos(player1.getXPos() + 5);
 		}
 		
 		if (Gdx.input.isKeyJustPressed(Keys.C)) {
-			if (currAnim != punchAnim) {
-				player1.setAnimationParameters(punchAnim);
-				currAnim = punchAnim;
+			if (player1CurrAnim != johnnyDPunchAnim) {
+				player1.setAnimationParameters(johnnyDPunchAnim);
+				player1CurrAnim = johnnyDPunchAnim;
 			}			
 			player1.animate(dt);
 			//player1.resetAnimation();
 		}
 		
+		// isKeyJustPressed
 		if (Gdx.input.isKeyJustPressed(Keys.V)) {
-			if (currAnim != kickAnim) {
-				player1.setAnimationParameters(kickAnim);
-				currAnim = kickAnim;
+			if (player1CurrAnim != johnnyDKickAnim) {
+				player1.setAnimationParameters(johnnyDKickAnim);
+				player1.setDiscreteAnimation(true);
+				player1CurrAnim = johnnyDKickAnim;
 			}
-			player1.animate(dt);
 			//player1.resetAnimation();
+			player1.startDiscreteAnimation();
 		}
+		
+		/*
+		if (currAnim == kickAnim && player1.getCurrentFrame() < 3) {
+			
+			player1.animate(dt);
+			
+		}
+		*/
+		
+		
 		
 		/* TODO
 		 * Player 2 Controls:
@@ -178,6 +200,32 @@ public class DontFunkWithMe extends ApplicationAdapter {
 		 * / - Kick
 		 * */
 		
+		// move to the left
+		if (Gdx.input.isKeyPressed(Keys.J)) {
+			if (player2CurrAnim != theKingWalkAnim) {
+				player2.setDiscreteAnimation(false);
+				player2.setAnimationParameters(theKingWalkAnim);
+				player2CurrAnim = theKingWalkAnim;
+			}
+			player2MovingLeft = true;
+			player2.setFlipX(player2MovingLeft);
+			player2.animate(dt);
+			player2.setXPos(player2.getXPos() - 5);
+		}
+		
+		// move to the right
+		if (Gdx.input.isKeyPressed(Keys.L)) {
+			if (player2CurrAnim != theKingWalkAnim) {
+				player2.setDiscreteAnimation(false);
+				player2.setAnimationParameters(theKingWalkAnim);
+				player2CurrAnim = theKingWalkAnim;
+			}
+			player2MovingLeft = false;
+			player2.setFlipX(player2MovingLeft);
+			player2.animate(dt);
+			player2.setXPos(player2.getXPos() + 5);
+		}
+		
 		batch.begin();
 		batch.draw(theKingMap, 0, 0); // display the map the player's will fight at
 		player1Label.draw(batch, 1); // display player 1's character name
@@ -187,7 +235,14 @@ public class DontFunkWithMe extends ApplicationAdapter {
 		//countdownTimer.draw(batch, 1);
 		countDownLabel.draw(batch, 1);
 		drawer1.draw(player1); // display the sprite on the map
+		drawer2.draw(player2);
 		batch.end();
+		/*
+		if (currAnim == kickAnim && player1.getCurrentFrame() == 2) {
+			player1.setAnimationParameters(walkAnim);
+			currAnim = walkAnim;
+		}
+		*/
 	}
 	
 	@Override
