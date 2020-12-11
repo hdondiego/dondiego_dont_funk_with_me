@@ -23,7 +23,8 @@ import java.util.Timer;
 public class DontFunkWithMe extends ApplicationAdapter {
 	SpriteBatch batch;
 	Texture theKingMap, johnnyDTex, theKingTex, healthBar1, healthBar2; // player2Tex
-	AnimatedImageBasedScreenObject player1, player2;
+	//AnimatedImageBasedScreenObject player1, player2;
+	MobileImageBasedScreenObject player1, player2;
 	ImageBasedScreenObjectDrawer drawer1, drawer2;
 	OrthographicCamera cam, titleCam;
 	int WIDTH, HEIGHT, seconds;
@@ -43,6 +44,8 @@ public class DontFunkWithMe extends ApplicationAdapter {
 	AnimationParameters johnnyDWalkAnim, johnnyDPunchAnim, johnnyDKickAnim, player1CurrAnim;
 	AnimationParameters theKingWalkAnim, player2CurrAnim;
 	
+	EdgeHandler edgeHandler;
+	
 	@Override
 	public void create () {
 		batch = new SpriteBatch();
@@ -59,6 +62,7 @@ public class DontFunkWithMe extends ApplicationAdapter {
 		drawer1 = new ImageBasedScreenObjectDrawer(batch);
 		drawer2 = new ImageBasedScreenObjectDrawer(batch);
 		isRoundOver = false;
+		
 		
 		// creating labels for each fighter on the top part of the screen - in this case, Johnny Dansalot (main character) and The King
 		player1Label = new ActionLabel("Johnny Dansalot", 10, 620, "fonts/agency_fb_35pt_black.fnt");
@@ -98,13 +102,18 @@ public class DontFunkWithMe extends ApplicationAdapter {
 		player1MovingLeft = false;
 		player2MovingLeft = false;
 		
-		player1 = new AnimatedImageBasedScreenObject(johnnyDTex, 600, 130, 0, 0, 0, 10, 10, player1MovingLeft, false, FRAME_WIDTH, FRAME_HEIGHT, player1WalkSeq, ANIM_DELAY);
+		//player1 = new AnimatedImageBasedScreenObject(johnnyDTex, 600, 130, 0, 0, 0, 10, 10, player1MovingLeft, false, FRAME_WIDTH, FRAME_HEIGHT, player1WalkSeq, ANIM_DELAY);
+		player1 = new MobileImageBasedScreenObject(johnnyDTex, 600, 130, 0, 0, 0, 10, 10, player1MovingLeft, false, FRAME_WIDTH, FRAME_HEIGHT, player1WalkSeq, ANIM_DELAY);
 		johnnyDWalkAnim = new AnimationParameters(FRAME_WIDTH, FRAME_HEIGHT, player1WalkSeq, ANIM_DELAY);
 		johnnyDPunchAnim = new AnimationParameters(FRAME_WIDTH, FRAME_HEIGHT, player1PunchSeq, ANIM_DELAY);
 		johnnyDKickAnim = new AnimationParameters(FRAME_WIDTH, FRAME_HEIGHT, player1KickSeq, 0.1f); // 0.2f
+		johnnyDKickAnim.setDiscrete(true);
 		player1CurrAnim = johnnyDWalkAnim;
 		
-		player2 = new AnimatedImageBasedScreenObject(theKingTex, 800, 130, 0, 0, 0, 10, 10, player2MovingLeft, false, FRAME_WIDTH, FRAME_HEIGHT, player2WalkSeq, ANIM_DELAY);
+		
+		//player2 = new AnimatedImageBasedScreenObject(theKingTex, 800, 130, 0, 0, 0, 10, 10, player2MovingLeft, false, FRAME_WIDTH, FRAME_HEIGHT, player2WalkSeq, ANIM_DELAY);
+		player2 = new MobileImageBasedScreenObject(theKingTex, 800, 130, 0, 0, 0, 10, 10, player2MovingLeft, false, FRAME_WIDTH, FRAME_HEIGHT, player2WalkSeq, ANIM_DELAY);
+		edgeHandler = new EdgeHandler(player1, cam, batch, 0, theKingMap.getWidth(), 0, theKingMap.getHeight(), 0, EdgeHandler.EdgeConstants.PAN, EdgeHandler.EdgeConstants.PAN);
 		fightMusic.play();
 		start();
 		
@@ -173,12 +182,16 @@ public class DontFunkWithMe extends ApplicationAdapter {
 		if (Gdx.input.isKeyJustPressed(Keys.V)) {
 			if (player1CurrAnim != johnnyDKickAnim) {
 				player1.setAnimationParameters(johnnyDKickAnim);
-				player1.setDiscreteAnimation(true);
+				//player1.setDiscreteAnimation(true);
 				player1CurrAnim = johnnyDKickAnim;
 			}
 			//player1.resetAnimation();
 			player1.startDiscreteAnimation();
-		}
+			//			obj.accelerateAtAngle(0);
+			player1.accelerateAtAngle(0);
+		} //else if((player1.isDiscreteAnimation() && player1.isAnimationActive())) {
+			//player1.animate(dt);
+		//}
 		
 		/*
 		if (currAnim == kickAnim && player1.getCurrentFrame() < 3) {
@@ -187,7 +200,8 @@ public class DontFunkWithMe extends ApplicationAdapter {
 			
 		}
 		*/
-		
+		// obj.applyPhysics(dt);
+		player1.applyPhysics(dt);
 		
 		
 		/* TODO
@@ -226,6 +240,7 @@ public class DontFunkWithMe extends ApplicationAdapter {
 			player2.setXPos(player2.getXPos() + 5);
 		}
 		
+		edgeHandler.enforceEdges();
 		batch.begin();
 		batch.draw(theKingMap, 0, 0); // display the map the player's will fight at
 		player1Label.draw(batch, 1); // display player 1's character name

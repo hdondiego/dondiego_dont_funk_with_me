@@ -16,9 +16,8 @@ public class ImageBasedScreenObject implements Collidable {
     protected boolean flipX;
     protected boolean flipY;
     protected Polygon boundingPolygon;
-    protected boolean visible;
     protected AnimationParameters animationParameters;
-
+    
     public void setAnimationParameters() {
         animationParameters = new AnimationParameters(getWidth(), getHeight(), null, 0);
     }
@@ -38,8 +37,8 @@ public class ImageBasedScreenObject implements Collidable {
         centerOriginGeometrically();
     }
     
-    public void setAnimationParameters(AnimationParameters animationParameters) {
-    	this.animationParameters = animationParameters;
+    public void setAnimationParameters(AnimationParameters currAnim) {
+    	this.animationParameters = currAnim;
     }
 
     public ImageBasedScreenObject(Texture tex) {
@@ -77,7 +76,6 @@ public class ImageBasedScreenObject implements Collidable {
         this.flipY = flipY;
         initBoundingPolygon();
         setAnimationParameters();
-        visible = true;
     }
     // depending on your actual ImageBasedScreenObject (and note that
     // you will probably come up with descendants of ImageBasedScreenObject)
@@ -218,17 +216,5 @@ public class ImageBasedScreenObject implements Collidable {
     }
     public float getHeight() {
         return img.getHeight();
-    }
-    public void setVisible(boolean visible) {
-        this.visible = visible;
-    }
-    public boolean isVisible() {
-        return (visible == true);
-    }
-    public void show() {
-        visible = true;
-    }
-    public void hide() {
-        visible = false;
     }
 }

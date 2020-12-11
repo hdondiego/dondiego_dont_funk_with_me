@@ -21,7 +21,7 @@ public class AnimationParameters {
     public void setDiscrete(boolean discrete) {
         this.discrete = discrete;
     }
-
+    
     public float getFrameWidth() {
         return frameWidth;
     }
@@ -47,15 +47,15 @@ public class AnimationParameters {
     }
     public void setCurrentFrame(int currentFrame) {
         if (frameSequence != null) {
-            if (discrete && isActive()) {
-                if (currentFrame < frameSequence.length/2) {
+        	if (discrete && isActive()) {
+        		if (currentFrame < frameSequence.length/2) {
                     this.currentFrame = currentFrame;
-                } else {
-                    active = false;
-                }
-            } else {
+        		} else {
+        			active = false;
+        		}
+        	} else {
                 this.currentFrame = currentFrame % (frameSequence.length/2);
-            }
+        	}
         } else {
             this.currentFrame = 0;
         }

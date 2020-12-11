@@ -132,7 +132,7 @@ public class MobileImageBasedScreenObject extends AnimatedImageBasedScreenObject
 
         if (isMoving() || (isDiscreteAnimation() && isAnimationActive())) {
             animate(dt);
-        } else if (!isDiscreteAnimation()) {
+        } else if (!isDiscreteAnimation()){
             resetAnimation();
         }
 
@@ -169,14 +169,12 @@ public class MobileImageBasedScreenObject extends AnimatedImageBasedScreenObject
     }
     public void rotate(float dAngle) {
         rotation += dAngle;
-    } 
-    /*
+    }
     public boolean isDiscreteAnimation() {
         return animationParameters.getDiscrete();
     }
     public boolean isAnimationActive() {
         return animationParameters.isActive();
     }
-    */
 }
 
