@@ -45,6 +45,13 @@ public class AnimatedImageBasedScreenObject extends ImageBasedScreenObject {
     public void setAnimationActive(boolean active) {
         animationParameters.setActive(active);
     }
+    // setFixedAnimationActive?
+    /*
+    public void setFixedAnimationActive() {
+    	//animationParameters.setFixed(fixed);
+    }
+    */
+    // resetFixedAnimation?
     public void resetAnimation() {
         setAnimationActive(false);
         animationParameters.setCurrentFrame(0);  // at the end of a run
@@ -55,6 +62,7 @@ public class AnimatedImageBasedScreenObject extends ImageBasedScreenObject {
             animationParameters.changeFrame();
         }
     }
+    
     public void setDiscreteAnimation(boolean disc) {
         animationParameters.setDiscrete(disc);
         animationParameters.setActive(false);
@@ -63,9 +71,19 @@ public class AnimatedImageBasedScreenObject extends ImageBasedScreenObject {
         resetAnimation();
         setAnimationActive(true);
     }
+    /*
+    public void startFixedAnimation() {
+    	//setFixedAnimation()
+    }
+    */
     public boolean isDiscreteAnimation() {
         return animationParameters.getDiscrete();
     }
+    /*
+    public boolean isFixedAnimation() {
+    	return animationParameters.getFixed();
+    }
+    */
     public boolean isAnimationActive() {
         return animationParameters.isActive();
     }

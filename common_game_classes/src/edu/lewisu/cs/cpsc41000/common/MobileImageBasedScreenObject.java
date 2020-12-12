@@ -130,6 +130,7 @@ public class MobileImageBasedScreenObject extends AnimatedImageBasedScreenObject
 
         move(velocityVec.x*dt, velocityVec.y*dt);
 
+        // add fixed animation
         if (isMoving() || (isDiscreteAnimation() && isAnimationActive())) {
             animate(dt);
         } else if (!isDiscreteAnimation()) {

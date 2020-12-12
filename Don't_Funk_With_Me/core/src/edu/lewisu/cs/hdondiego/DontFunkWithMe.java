@@ -9,6 +9,7 @@ import edu.lewisu.cs.cpsc41000.common.labels.ActionLabel;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input.Keys;
+import com.badlogic.gdx.InputAdapter;
 import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
@@ -19,6 +20,57 @@ import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Label.LabelStyle;
 
 import java.util.Timer;
+
+/*
+class FighterInputAdapter extends InputAdapter {
+	MobileImageBasedScreenObject mObj;
+	AnimationParameters animParameters;
+	
+	public AnimationParameters getAnimParameters() {
+		return animParameters;
+	}
+
+	public void setAnimParameters(AnimationParameters animParameters) {
+		this.animParameters = animParameters;
+	}
+	
+	public FighterInputAdapter(MobileImageBasedScreenObject mObj) {
+		this.mObj = mObj;
+		animParameters = null;
+	}
+	
+	@Override
+	public boolean keyDown(int keyCode) {
+		// player 1 - block
+		if (keyCode == Keys.S) {
+			if (player1CurrAnim != johnnyDBlockAnim) {
+				player1.setAnimationParameters(johnnyDBlockAnim);
+				player1CurrAnim = johnnyDBlockAnim;
+			}
+			//player1.accelerateAtAngle(270);
+			player1.startDiscreteAnimation();
+		}
+		
+		return true;
+	}
+	
+	@Override
+	public boolean keyUp(int keyCode) {
+		// player 1 - undoing block
+		if (keyCode == Keys.S) {
+			if (player1CurrAnim != johnnyDBlockAnim) {
+				player1.setAnimationParameters(johnnyDBlockAnim);
+				player1CurrAnim = johnnyDBlockAnim;
+			}
+			//player1.accelerateAtAngle(270);
+			player1.startDiscreteAnimation();
+		}
+		
+		return true;
+	}
+}
+*/
+
 
 public class DontFunkWithMe extends ApplicationAdapter {
 	SpriteBatch batch;
@@ -32,6 +84,7 @@ public class DontFunkWithMe extends ApplicationAdapter {
 	int[] player1WalkSeq = {0,0,1,0,2,0}; // follows the order for each different movement - only for Johnny Dansalot
 	int[] player1PunchSeq = {0,1,1,1,2,1};
 	int[] player1KickSeq = {0,2,1,2,2,2};
+	int[] player1BlockSeq = {0,3,1,3,2,3};
 	
 	int[] player2WalkSeq = {0,0,1,0,2,0,3,0}; // only for The King
 	ActionLabel player1Label, player2Label;//, countdownTimer;
@@ -41,10 +94,11 @@ public class DontFunkWithMe extends ApplicationAdapter {
 	TimerTask timerTask;
 	LabelStyle style = new LabelStyle();
 	Label countDownLabel;
-	AnimationParameters johnnyDWalkAnim, johnnyDPunchAnim, johnnyDKickAnim, player1CurrAnim;
+	AnimationParameters johnnyDWalkAnim, johnnyDPunchAnim, johnnyDKickAnim, johnnyDBlockAnim, player1CurrAnim;
 	AnimationParameters theKingWalkAnim, player2CurrAnim;
 	
 	EdgeHandler edgeHandler;
+	//FighterInputAdapter fiaPlayer1, fiaPlayer2;
 	
 	@Override
 	public void create () {
@@ -104,16 +158,26 @@ public class DontFunkWithMe extends ApplicationAdapter {
 		
 		//player1 = new AnimatedImageBasedScreenObject(johnnyDTex, 600, 130, 0, 0, 0, 10, 10, player1MovingLeft, false, FRAME_WIDTH, FRAME_HEIGHT, player1WalkSeq, ANIM_DELAY);
 		player1 = new MobileImageBasedScreenObject(johnnyDTex, 600, 130, 0, 0, 0, 10, 10, player1MovingLeft, false, FRAME_WIDTH, FRAME_HEIGHT, player1WalkSeq, ANIM_DELAY);
+		player1.setAcceleration(500);
+		player1.setDeceleration(1000);
+		player1.setMaxSpeed(300);
 		johnnyDWalkAnim = new AnimationParameters(FRAME_WIDTH, FRAME_HEIGHT, player1WalkSeq, ANIM_DELAY);
 		johnnyDPunchAnim = new AnimationParameters(FRAME_WIDTH, FRAME_HEIGHT, player1PunchSeq, ANIM_DELAY);
+		johnnyDPunchAnim.setDiscrete(true);
 		johnnyDKickAnim = new AnimationParameters(FRAME_WIDTH, FRAME_HEIGHT, player1KickSeq, 0.1f); // 0.2f
 		johnnyDKickAnim.setDiscrete(true);
+		johnnyDBlockAnim = new AnimationParameters(FRAME_WIDTH, FRAME_HEIGHT, player1BlockSeq, ANIM_DELAY);
+		johnnyDBlockAnim.setDiscrete(true);
 		player1CurrAnim = johnnyDWalkAnim;
 		
 		
 		//player2 = new AnimatedImageBasedScreenObject(theKingTex, 800, 130, 0, 0, 0, 10, 10, player2MovingLeft, false, FRAME_WIDTH, FRAME_HEIGHT, player2WalkSeq, ANIM_DELAY);
 		player2 = new MobileImageBasedScreenObject(theKingTex, 800, 130, 0, 0, 0, 10, 10, player2MovingLeft, false, FRAME_WIDTH, FRAME_HEIGHT, player2WalkSeq, ANIM_DELAY);
 		edgeHandler = new EdgeHandler(player1, cam, batch, 0, theKingMap.getWidth(), 0, theKingMap.getHeight(), 0, EdgeHandler.EdgeConstants.PAN, EdgeHandler.EdgeConstants.PAN);
+		
+		//fiaPlayer1 = new FighterInputAdapter(player1);
+		//fiaPlayer2 = new FighterInputAdapter(player2);
+		
 		fightMusic.play();
 		start();
 		
@@ -146,61 +210,55 @@ public class DontFunkWithMe extends ApplicationAdapter {
 		// move to the left
 		if (Gdx.input.isKeyPressed(Keys.A)) {
 			if (player1CurrAnim != johnnyDWalkAnim) {
-				player1.setDiscreteAnimation(false);
 				player1.setAnimationParameters(johnnyDWalkAnim);
 				player1CurrAnim = johnnyDWalkAnim;
 			}
 			player1MovingLeft = true;
 			player1.setFlipX(player1MovingLeft);
-			player1.animate(dt);
-			player1.setXPos(player1.getXPos() - 5);
+			player1.accelerateAtAngle(180);
 		}
 		
 		// move to the right
 		if (Gdx.input.isKeyPressed(Keys.D)) {
 			if (player1CurrAnim != johnnyDWalkAnim) {
-				player1.setDiscreteAnimation(false);
 				player1.setAnimationParameters(johnnyDWalkAnim);
 				player1CurrAnim = johnnyDWalkAnim;
 			}
 			player1MovingLeft = false;
 			player1.setFlipX(player1MovingLeft);
-			player1.animate(dt);
-			player1.setXPos(player1.getXPos() + 5);
+			player1.accelerateAtAngle(0);
 		}
 		
+		// to block
+		if (Gdx.input.isKeyJustPressed(Keys.S)) {
+			if (player1CurrAnim != johnnyDBlockAnim) {
+				player1.setAnimationParameters(johnnyDBlockAnim);
+				player1CurrAnim = johnnyDBlockAnim;
+			}
+			//player1.accelerateAtAngle(270);
+			player1.startDiscreteAnimation();
+		}
+		
+		// to punch
 		if (Gdx.input.isKeyJustPressed(Keys.C)) {
 			if (player1CurrAnim != johnnyDPunchAnim) {
 				player1.setAnimationParameters(johnnyDPunchAnim);
 				player1CurrAnim = johnnyDPunchAnim;
 			}			
-			player1.animate(dt);
-			//player1.resetAnimation();
+			player1.startDiscreteAnimation();
+			player1.accelerateAtAngle(0);
 		}
 		
-		// isKeyJustPressed
+		// to kick
 		if (Gdx.input.isKeyJustPressed(Keys.V)) {
 			if (player1CurrAnim != johnnyDKickAnim) {
 				player1.setAnimationParameters(johnnyDKickAnim);
-				//player1.setDiscreteAnimation(true);
 				player1CurrAnim = johnnyDKickAnim;
 			}
-			//player1.resetAnimation();
 			player1.startDiscreteAnimation();
-			//			obj.accelerateAtAngle(0);
 			player1.accelerateAtAngle(0);
-		} //else if((player1.isDiscreteAnimation() && player1.isAnimationActive())) {
-			//player1.animate(dt);
-		//}
-		
-		/*
-		if (currAnim == kickAnim && player1.getCurrentFrame() < 3) {
-			
-			player1.animate(dt);
-			
 		}
-		*/
-		// obj.applyPhysics(dt);
+		
 		player1.applyPhysics(dt);
 		
 		
@@ -241,6 +299,7 @@ public class DontFunkWithMe extends ApplicationAdapter {
 		}
 		
 		edgeHandler.enforceEdges();
+		
 		batch.begin();
 		batch.draw(theKingMap, 0, 0); // display the map the player's will fight at
 		player1Label.draw(batch, 1); // display player 1's character name

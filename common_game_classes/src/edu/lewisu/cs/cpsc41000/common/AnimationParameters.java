@@ -8,7 +8,13 @@ public class AnimationParameters {
     private float timeSince;
     private float delay; 
     private boolean discrete; // should this be played all at once?
+    //private boolean fixed;
     private boolean active;
+    /*
+    public boolean getFixed() {
+    	return fixed;
+    }
+    */
     public boolean getDiscrete() {
         return discrete;
     }
@@ -18,6 +24,10 @@ public class AnimationParameters {
     public void setActive(boolean active) {
         this.active = active;
     }
+    /*
+    public void setFixed(boolean fixed) {
+    	this.fixed = fixed;
+    }*/
     public void setDiscrete(boolean discrete) {
         this.discrete = discrete;
     }
@@ -46,6 +56,7 @@ public class AnimationParameters {
         return currentFrame;
     }
     public void setCurrentFrame(int currentFrame) {
+    	// add condition for fixed animation
         if (frameSequence != null) {
             if (discrete && isActive()) {
                 if (currentFrame < frameSequence.length/2) {
@@ -86,6 +97,7 @@ public class AnimationParameters {
         timeSince = 0;
         delay = 0.1f;
         discrete = false;
+        //fixed = false;
     }
     public AnimationParameters(float frameWidth, float frameHeight, int[] frameSequence, float delay) {
         setFrameWidth(frameWidth);
@@ -94,6 +106,7 @@ public class AnimationParameters {
         setFrameSequence(frameSequence);
         setDelay(delay);
         discrete = false;
+        //fixed = false;
         timeSince = 0;
     }
     // this function is what actually accomplishes the animation
