@@ -10,6 +10,7 @@ import edu.lewisu.cs.cpsc41000.common.labels.ActionLabel;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input.Keys;
 import com.badlogic.gdx.InputAdapter;
+import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
@@ -21,10 +22,11 @@ import com.badlogic.gdx.scenes.scene2d.ui.Label.LabelStyle;
 
 import java.util.Timer;
 
-/*
+
 class FighterInputAdapter extends InputAdapter {
 	MobileImageBasedScreenObject mObj;
 	AnimationParameters animParameters;
+	AnimationParameters revAnimParameters; // reverse animation of animParameters
 	
 	public AnimationParameters getAnimParameters() {
 		return animParameters;
@@ -39,16 +41,35 @@ class FighterInputAdapter extends InputAdapter {
 		animParameters = null;
 	}
 	
+	public void updateMobileObject(MobileImageBasedScreenObject mObj) {
+		this.mObj = mObj;
+	}
+	
+	public FighterInputAdapter(MobileImageBasedScreenObject mObj, AnimationParameters animParameters, AnimationParameters revAnimParameters) {
+		this.mObj = mObj;
+		this.animParameters = animParameters;
+		this.revAnimParameters = revAnimParameters;
+		//int[] tempFrameSequence = new int[animParameters.getFrameSequence().length];//animParameters.getFrameSequence();
+		
+		//for (int i=0; i < animParameters.getFrameSequence().length)
+		
+	}
+	
 	@Override
 	public boolean keyDown(int keyCode) {
 		// player 1 - block
 		if (keyCode == Keys.S) {
+			/*
 			if (player1CurrAnim != johnnyDBlockAnim) {
 				player1.setAnimationParameters(johnnyDBlockAnim);
 				player1CurrAnim = johnnyDBlockAnim;
+			}*/
+			
+			if (mObj.getAnimationParameters() != animParameters) {
+				mObj.setAnimationParameters(animParameters);
 			}
 			//player1.accelerateAtAngle(270);
-			player1.startDiscreteAnimation();
+			mObj.startDiscreteAnimation();
 		}
 		
 		return true;
@@ -58,18 +79,23 @@ class FighterInputAdapter extends InputAdapter {
 	public boolean keyUp(int keyCode) {
 		// player 1 - undoing block
 		if (keyCode == Keys.S) {
+			/*
 			if (player1CurrAnim != johnnyDBlockAnim) {
 				player1.setAnimationParameters(johnnyDBlockAnim);
 				player1CurrAnim = johnnyDBlockAnim;
 			}
+			*/
+			if (mObj.getAnimationParameters() != revAnimParameters) {
+				mObj.setAnimationParameters(revAnimParameters);
+			}
 			//player1.accelerateAtAngle(270);
-			player1.startDiscreteAnimation();
+			mObj.startDiscreteAnimation();
 		}
 		
 		return true;
 	}
 }
-*/
+
 
 
 public class DontFunkWithMe extends ApplicationAdapter {
@@ -85,6 +111,7 @@ public class DontFunkWithMe extends ApplicationAdapter {
 	int[] player1PunchSeq = {0,1,1,1,2,1};
 	int[] player1KickSeq = {0,2,1,2,2,2};
 	int[] player1BlockSeq = {0,3,1,3,2,3};
+	int[] player1RevBlockSeq = {2,3,1,3,0,3}; //2,3,1,3,0,3
 	
 	int[] player2WalkSeq = {0,0,1,0,2,0,3,0}; // only for The King
 	ActionLabel player1Label, player2Label;//, countdownTimer;
@@ -94,11 +121,12 @@ public class DontFunkWithMe extends ApplicationAdapter {
 	TimerTask timerTask;
 	LabelStyle style = new LabelStyle();
 	Label countDownLabel;
-	AnimationParameters johnnyDWalkAnim, johnnyDPunchAnim, johnnyDKickAnim, johnnyDBlockAnim, player1CurrAnim;
+	AnimationParameters johnnyDWalkAnim, johnnyDPunchAnim, johnnyDKickAnim, johnnyDBlockAnim, johnnyDRevBlockAnim, player1CurrAnim;
 	AnimationParameters theKingWalkAnim, player2CurrAnim;
 	
 	EdgeHandler edgeHandler;
-	//FighterInputAdapter fiaPlayer1, fiaPlayer2;
+	InputMultiplexer plexi;
+	FighterInputAdapter fiaPlayer1, fiaPlayer2;
 	
 	@Override
 	public void create () {
@@ -168,6 +196,8 @@ public class DontFunkWithMe extends ApplicationAdapter {
 		johnnyDKickAnim.setDiscrete(true);
 		johnnyDBlockAnim = new AnimationParameters(FRAME_WIDTH, FRAME_HEIGHT, player1BlockSeq, ANIM_DELAY);
 		johnnyDBlockAnim.setDiscrete(true);
+		johnnyDRevBlockAnim = new AnimationParameters(FRAME_WIDTH, FRAME_HEIGHT, player1RevBlockSeq, ANIM_DELAY);
+		johnnyDRevBlockAnim.setDiscrete(true);
 		player1CurrAnim = johnnyDWalkAnim;
 		
 		
@@ -175,9 +205,12 @@ public class DontFunkWithMe extends ApplicationAdapter {
 		player2 = new MobileImageBasedScreenObject(theKingTex, 800, 130, 0, 0, 0, 10, 10, player2MovingLeft, false, FRAME_WIDTH, FRAME_HEIGHT, player2WalkSeq, ANIM_DELAY);
 		edgeHandler = new EdgeHandler(player1, cam, batch, 0, theKingMap.getWidth(), 0, theKingMap.getHeight(), 0, EdgeHandler.EdgeConstants.PAN, EdgeHandler.EdgeConstants.PAN);
 		
-		//fiaPlayer1 = new FighterInputAdapter(player1);
+		fiaPlayer1 = new FighterInputAdapter(player1, johnnyDBlockAnim, johnnyDRevBlockAnim);
 		//fiaPlayer2 = new FighterInputAdapter(player2);
-		
+		//plexi = new InputMultiplexer();
+		//plexi.addProcessor(fiaPlayer1);
+		//plexi.addProcessor(fiaPlayer2);
+		Gdx.input.setInputProcessor(fiaPlayer1);
 		fightMusic.play();
 		start();
 		
@@ -233,10 +266,11 @@ public class DontFunkWithMe extends ApplicationAdapter {
 		if (Gdx.input.isKeyJustPressed(Keys.S)) {
 			if (player1CurrAnim != johnnyDBlockAnim) {
 				player1.setAnimationParameters(johnnyDBlockAnim);
+				fiaPlayer1.updateMobileObject(player1);
 				player1CurrAnim = johnnyDBlockAnim;
 			}
 			//player1.accelerateAtAngle(270);
-			player1.startDiscreteAnimation();
+			//player1.startDiscreteAnimation();
 		}
 		
 		// to punch

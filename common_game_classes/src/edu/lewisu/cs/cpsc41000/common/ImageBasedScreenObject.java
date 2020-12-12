@@ -41,6 +41,10 @@ public class ImageBasedScreenObject implements Collidable {
     public void setAnimationParameters(AnimationParameters animationParameters) {
     	this.animationParameters = animationParameters;
     }
+    
+    public AnimationParameters getAnimationParameters() {
+    	return animationParameters;
+    }
 
     public ImageBasedScreenObject(Texture tex) {
         this(tex,0,0,0,0,0,1,1,false,false);
