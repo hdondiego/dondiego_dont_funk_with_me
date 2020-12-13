@@ -268,6 +268,10 @@ public class DontFunkWithMe extends ApplicationAdapter {
 	@Override
 	public void render () {
 		float dt = Gdx.graphics.getDeltaTime();
+		player1Label.setPosition(20+(cam.position.x-WIDTH/2), 620+(cam.position.y-HEIGHT/2));
+		player2Label.setPosition(850+(cam.position.x-WIDTH/2), 620+(cam.position.y-HEIGHT/2)); // adjust the x depending on character name lengths
+		
+		
 		Gdx.gl.glClearColor(1, 0, 0, 1);
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 		
@@ -403,9 +407,12 @@ public class DontFunkWithMe extends ApplicationAdapter {
 		batch.draw(theKingMapTex, 0, 0); // display the map the players will fight at
 		player1Label.draw(batch, 1); // display player 1's character name
 		player2Label.draw(batch, 1); // display player 2's character name
-		batch.draw(healthBar1Tex, 10, 660);
-		batch.draw(healthBar2Tex, 600, 660);
+		//batch.draw(healthBar1Tex, 10, 660);
+		batch.draw(healthBar1Tex, 20+(cam.position.x-WIDTH/2), 660+(cam.position.y-HEIGHT/2));
+		//batch.draw(healthBar2Tex, 600, 660);
+		batch.draw(healthBar2Tex, 590+(cam.position.x-WIDTH/2), 660+(cam.position.y-HEIGHT/2));
 		//countdownTimer.draw(batch, 1);
+		countDownLabel.setPosition(470+(cam.position.x-WIDTH/2), 660+(cam.position.y-HEIGHT/2));
 		countDownLabel.draw(batch, 1);
 		platformDrawer.draw(platform);
 		drawer1.draw(player1); // display the sprite on the map

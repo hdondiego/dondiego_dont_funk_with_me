@@ -55,6 +55,10 @@ public class ActionLabel implements Collidable {
 	public void draw(SpriteBatch batch, float alpha) {
 		label.draw(batch,alpha);
 	}
+	
+	public void setPosition(float x, float y) {
+		label.setPosition(x, y);
+	}
 
 	@Override
 	public Polygon getBoundingPolygon() {
