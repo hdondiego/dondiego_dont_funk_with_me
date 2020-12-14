@@ -17,10 +17,12 @@ import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Label.LabelStyle;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Timer;
 
 
@@ -28,6 +30,7 @@ class FighterInputAdapter extends InputAdapter {
 	MobileImageBasedScreenObject mObj;
 	AnimationParameters animParameters;
 	AnimationParameters revAnimParameters; // reverse animation of animParameters
+	boolean isBlocking;
 	
 	public AnimationParameters getAnimParameters() {
 		return animParameters;
@@ -50,10 +53,15 @@ class FighterInputAdapter extends InputAdapter {
 		this.mObj = mObj;
 		this.animParameters = animParameters;
 		this.revAnimParameters = revAnimParameters;
+		isBlocking = false;
 		//int[] tempFrameSequence = new int[animParameters.getFrameSequence().length];//animParameters.getFrameSequence();
 		
 		//for (int i=0; i < animParameters.getFrameSequence().length)
 		
+	}
+	
+	public boolean isBlocking() {
+		return isBlocking;
 	}
 	
 	@Override
@@ -71,6 +79,7 @@ class FighterInputAdapter extends InputAdapter {
 			}
 			//player1.accelerateAtAngle(270);
 			mObj.startDiscreteAnimation();
+			isBlocking =  true;
 		}
 		
 		return true;
@@ -91,6 +100,7 @@ class FighterInputAdapter extends InputAdapter {
 			}
 			//player1.accelerateAtAngle(270);
 			mObj.startDiscreteAnimation();
+			isBlocking = false;
 		}
 		
 		return true;
@@ -102,13 +112,15 @@ class FighterInputAdapter extends InputAdapter {
 public class DontFunkWithMe extends ApplicationAdapter {
 	SpriteBatch batch;
 	Texture theKingMapTex, johnnyDTex, theKingTex, healthBar1Tex, healthBar2Tex, theKingPlatformTex; // player2Tex, 
+	Texture health95, health90, health85, health80, health75, health70, health65, health60, health55, health50, health45, health40, health35, health30, health25, health20, health15, health10, health5, health0;
+	HashMap<Integer, Texture> player1HealthBars, player2HealthBars;
 	//AnimatedImageBasedScreenObject player1, player2;
 	//MobileImageBasedScreenObject player1, player2;
 	PlatformCharacter player1, player2;
 	ImageBasedScreenObject platform;
 	ImageBasedScreenObjectDrawer drawer1, drawer2, platformDrawer;
 	OrthographicCamera cam, titleCam;
-	int WIDTH, HEIGHT, seconds;
+	int WIDTH, HEIGHT, seconds, player1Health, player2Health;
 	float FRAME_WIDTH, FRAME_HEIGHT, ANIM_DELAY;
 	int[] player1WalkSeq = {0,0,1,0,2,0}; // follows the order for each different movement - only for Johnny Dansalot
 	int[] player1PunchSeq = {0,1,1,1,2,1};
@@ -123,7 +135,7 @@ public class DontFunkWithMe extends ApplicationAdapter {
 	int[] player2WalkSeq = {0,0,1,0,2,0,3,0}; // only for The King
 	ActionLabel player1Label, player2Label;//, countdownTimer;
 	Music fightMusic; // the background fight music
-	boolean player1MovingLeft, isRoundOver, player2MovingLeft, player1OnGround, player1ReachedMax;
+	boolean player1MovingLeft, isRoundOver, player2MovingLeft, isPlayer1Blocking, isPlayer2Blocking;//player1OnGround, player1ReachedMax;
 	int deltaY = 0;
 	Timer timer;
 	TimerTask timerTask;
@@ -156,16 +168,86 @@ public class DontFunkWithMe extends ApplicationAdapter {
 		drawer2 = new ImageBasedScreenObjectDrawer(batch);
 		platformDrawer = new ImageBasedScreenObjectDrawer(batch);
 		isRoundOver = false;
-		player1OnGround = true;
-		player1ReachedMax = false;
+		//player1OnGround = true;
+		//player1ReachedMax = false;
+		isPlayer1Blocking = false;
+		isPlayer2Blocking = false;
 		
 		// creating labels for each fighter on the top part of the screen - in this case, Johnny Dansalot (main character) and The King
 		player1Label = new ActionLabel("Johnny Dansalot", 10, 620, "fonts/agency_fb_35pt_black.fnt");
 		player2Label = new ActionLabel("The King", 820, 620, "fonts/agency_fb_35pt_black.fnt");
 		
 		// adding the health bars for each character
-		healthBar1Tex = new Texture("health_bar.png");
-		healthBar2Tex = new Texture("health_bar.png");
+		healthBar1Tex = new Texture("health_bar.png"); // 100 percent health bar for Player 1
+		healthBar2Tex = new Texture("health_bar.png"); // 100 percent health bar for Player 2
+		
+		health95 = new Texture("decreasing_health_bars/95.png");
+		health90 = new Texture("decreasing_health_bars/90.png");
+		health85 = new Texture("decreasing_health_bars/85.png");
+		health80 = new Texture("decreasing_health_bars/80.png");
+		health75 = new Texture("decreasing_health_bars/75.png");
+		health70 = new Texture("decreasing_health_bars/70.png");
+		health65 = new Texture("decreasing_health_bars/65.png");
+		health60 = new Texture("decreasing_health_bars/60.png");
+		health55 = new Texture("decreasing_health_bars/55.png");
+		health50 = new Texture("decreasing_health_bars/50.png");
+		health45 = new Texture("decreasing_health_bars/45.png");
+		health40 = new Texture("decreasing_health_bars/40.png");
+		health35 = new Texture("decreasing_health_bars/35.png");
+		health30 = new Texture("decreasing_health_bars/30.png");
+		health25 = new Texture("decreasing_health_bars/25.png");
+		health20 = new Texture("decreasing_health_bars/20.png");
+		health15 = new Texture("decreasing_health_bars/15.png");
+		health10 = new Texture("decreasing_health_bars/10.png");
+		health5 = new Texture("decreasing_health_bars/5.png");
+		health0 = new Texture("decreasing_health_bars/0.png");
+
+		player1HealthBars = new HashMap<Integer, Texture>();
+		player1HealthBars.put(95, health95);
+		player1HealthBars.put(90, health90);
+		player1HealthBars.put(85, health85);
+		player1HealthBars.put(80, health80);
+		player1HealthBars.put(75, health75);
+		player1HealthBars.put(70, health70);
+		player1HealthBars.put(65, health65);
+		player1HealthBars.put(60, health60);
+		player1HealthBars.put(55, health55);
+		player1HealthBars.put(50, health50);
+		player1HealthBars.put(45, health45);
+		player1HealthBars.put(40, health40);
+		player1HealthBars.put(35, health35);
+		player1HealthBars.put(30, health30);
+		player1HealthBars.put(25, health25);
+		player1HealthBars.put(20, health20);
+		player1HealthBars.put(15, health15);
+		player1HealthBars.put(10, health10);
+		player1HealthBars.put(5, health5);
+		player1HealthBars.put(0, health0);
+		
+		player2HealthBars = new HashMap<Integer, Texture>();
+		player2HealthBars.put(95, health95);
+		player2HealthBars.put(90, health90);
+		player2HealthBars.put(85, health85);
+		player2HealthBars.put(80, health80);
+		player2HealthBars.put(75, health75);
+		player2HealthBars.put(70, health70);
+		player2HealthBars.put(65, health65);
+		player2HealthBars.put(60, health60);
+		player2HealthBars.put(55, health55);
+		player2HealthBars.put(50, health50);
+		player2HealthBars.put(45, health45);
+		player2HealthBars.put(40, health40);
+		player2HealthBars.put(35, health35);
+		player2HealthBars.put(30, health30);
+		player2HealthBars.put(25, health25);
+		player2HealthBars.put(20, health20);
+		player2HealthBars.put(15, health15);
+		player2HealthBars.put(10, health10);
+		player2HealthBars.put(5, health5);
+		player2HealthBars.put(0, health0);
+		
+		player1Health = 100;
+		player2Health = 100;
 		
 		// instantiating the background fight music for The King's map
 		// the music continually loops
@@ -200,7 +282,7 @@ public class DontFunkWithMe extends ApplicationAdapter {
 		//player1 = new AnimatedImageBasedScreenObject(johnnyDTex, 600, 130, 0, 0, 0, 10, 10, player1MovingLeft, false, FRAME_WIDTH, FRAME_HEIGHT, player1WalkSeq, ANIM_DELAY);
 		//player1 = new MobileImageBasedScreenObject(johnnyDTex, 600, 130, 0, 0, 0, 10, 10, player1MovingLeft, false, FRAME_WIDTH, FRAME_HEIGHT, player1WalkSeq, ANIM_DELAY);
 		//player1 = new PlatformCharacter(johnnyDTex, 600, 140, 0, 0, 0, 1, 1, player1MovingLeft, false, FRAME_WIDTH, FRAME_HEIGHT, player1WalkSeq, ANIM_DELAY, 50, 100, 150,platforms);//platforms
-		player1 = new PlatformCharacter(johnnyDTex, 600,140,false);
+		player1 = new PlatformCharacter(johnnyDTex, 600,140,true);
 		player1.setAcceleration(500);
 		player1.setDeceleration(1000);
 		player1.setMaxSpeed(300);
@@ -224,7 +306,7 @@ public class DontFunkWithMe extends ApplicationAdapter {
 		//player2 = new MobileImageBasedScreenObject(theKingTex, 800, 130, 0, 0, 0, 10, 10, player2MovingLeft, false, FRAME_WIDTH, FRAME_HEIGHT, player2WalkSeq, ANIM_DELAY);
 		//player2.centerOriginGeometrically();
 		//player2 = new PlatformCharacter(theKingTex, 800, 140, 0, 0, 0, 1, 1, player2MovingLeft, false, FRAME_WIDTH, FRAME_HEIGHT, player2WalkSeq, ANIM_DELAY, 1000,400,10,platforms);
-		player2 = new PlatformCharacter(theKingTex, 800, 140, false);
+		player2 = new PlatformCharacter(theKingTex, 800, 140, true);
 		player2.setAcceleration(500);
 		player2.setDeceleration(1000);
 		player2.setMaxSpeed(300);
@@ -324,9 +406,12 @@ public class DontFunkWithMe extends ApplicationAdapter {
 		if (Gdx.input.isKeyJustPressed(Keys.S)) {
 			if (player1CurrAnim != johnnyDBlockAnim) {
 				player1.setAnimationParameters(johnnyDBlockAnim);
+				
 				fiaPlayer1.updateMobileObject(player1);
 				player1CurrAnim = johnnyDBlockAnim;
 			}
+			
+			//if (player1.is)
 			//player1.accelerateAtAngle(270);
 			//player1.startDiscreteAnimation();
 		}
@@ -338,9 +423,26 @@ public class DontFunkWithMe extends ApplicationAdapter {
 				player1CurrAnim = johnnyDPunchAnim;
 			}			
 			player1.startDiscreteAnimation();
-			player1.accelerateAtAngle(0);
-			if (player1.overlaps(player2)) {
+			//player1.accelerateAtAngle(0);
+			if (player1.overlaps(player2) && !isPlayer2Blocking) {
 				System.out.println("Player 1 got 'em with the Dab");
+				player2Health -= 5;
+				//Vector2 collide = player1.preventOverlap(player2);
+				//player2.rebound(collide.angle(), 1.0f);
+				
+				if (player1MovingLeft) {
+					//int tempSpeed = player2;
+					player2.rebound(180, 0.5f);
+					//player2.accelerateForward();
+					//player2.applyPhysics(dt);
+					//player2.accelerateAtAngle(180);
+				} else {
+					player2.rebound(0, 0.5f);
+					//player2.accelerateForward();
+					//player2.applyPhysics(dt);
+					//player2.accelerateAtAngle(0);
+				}
+				
 			}
 		}
 		
@@ -352,8 +454,14 @@ public class DontFunkWithMe extends ApplicationAdapter {
 			}
 			player1.startDiscreteAnimation();
 			player1.accelerateAtAngle(0);
-			if (player1.overlaps(player2)) {
+			if (player1.overlaps(player2) && !isPlayer2Blocking) {
 				System.out.println("Player 1 got 'em with that Superman kick");
+				player2Health -= 10;
+				if (player1MovingLeft) {
+					player2.rebound(180, 1.0f);
+				} else {
+					player2.rebound(0, 1.0f);
+				}
 			}
 		}
 		
@@ -411,6 +519,13 @@ public class DontFunkWithMe extends ApplicationAdapter {
 		batch.draw(healthBar1Tex, 20+(cam.position.x-WIDTH/2), 660+(cam.position.y-HEIGHT/2));
 		//batch.draw(healthBar2Tex, 600, 660);
 		batch.draw(healthBar2Tex, 590+(cam.position.x-WIDTH/2), 660+(cam.position.y-HEIGHT/2));
+		if (player2Health <= 0) {
+			player2Health = 0;
+		}
+		
+		if (player2Health < 100 && player2Health >= 0) {
+			batch.draw(player2HealthBars.get(player2Health), 590+(cam.position.x-WIDTH/2), 660+(cam.position.y-HEIGHT/2));
+		}
 		//countdownTimer.draw(batch, 1);
 		countDownLabel.setPosition(470+(cam.position.x-WIDTH/2), 660+(cam.position.y-HEIGHT/2));
 		countDownLabel.draw(batch, 1);
