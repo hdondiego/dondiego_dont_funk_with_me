@@ -113,13 +113,14 @@ public class DontFunkWithMe extends ApplicationAdapter {
 	SpriteBatch batch;
 	Texture theKingMapTex, johnnyDTex, theKingTex, healthBar1Tex, healthBar2Tex, theKingPlatformTex; // player2Tex, 
 	Texture health95, health90, health85, health80, health75, health70, health65, health60, health55, health50, health45, health40, health35, health30, health25, health20, health15, health10, health5, health0;
+	Texture titleTex, titleBackgroundTex, startFightSelectedTex, startFightUnselectedTex, exitSelectedTex, exitUnselectedTex;
 	HashMap<Integer, Texture> player1HealthBars, player2HealthBars;
 	//AnimatedImageBasedScreenObject player1, player2;
 	//MobileImageBasedScreenObject player1, player2;
 	PlatformCharacter player1, player2;
 	ImageBasedScreenObject platform;
 	ImageBasedScreenObjectDrawer drawer1, drawer2, platformDrawer;
-	OrthographicCamera cam, titleCam;
+	OrthographicCamera fightCam, titleCam;
 	int WIDTH, HEIGHT, seconds, player1Health, player2Health;
 	float FRAME_WIDTH, FRAME_HEIGHT, ANIM_DELAY;
 	int[] player1WalkSeq = {0,0,1,0,2,0}; // follows the order for each different movement - only for Johnny Dansalot
@@ -134,9 +135,11 @@ public class DontFunkWithMe extends ApplicationAdapter {
 	
 	int[] player2WalkSeq = {0,0,1,0,2,0,3,0}; // only for The King
 	ActionLabel player1Label, player2Label;//, countdownTimer;
-	Music fightMusic; // the background fight music
-	boolean player1MovingLeft, isRoundOver, player2MovingLeft, isPlayer1Blocking, isPlayer2Blocking;//player1OnGround, player1ReachedMax;
+	Music titleMusic, fightMusic; // the background fight music
+	boolean player1MovingLeft, inFight, isRoundOver, player2MovingLeft, isPlayer1Blocking, isPlayer2Blocking;//player1OnGround, player1ReachedMax;
 	int deltaY = 0;
+	int mode = 0; // 0 - title, 1 - settings, 2 - fight
+	int selectIncrementVal = 0; // used to increment when player loops through title screen buttons
 	Timer timer;
 	TimerTask timerTask;
 	LabelStyle style = new LabelStyle();
@@ -160,14 +163,28 @@ public class DontFunkWithMe extends ApplicationAdapter {
 		FRAME_WIDTH = 320f; // 32f
 		FRAME_HEIGHT = 320f; // 32f
 		ANIM_DELAY = 0.1f;
-		cam = new OrthographicCamera(WIDTH, HEIGHT);
-		cam.translate(WIDTH/2, HEIGHT/2);
-		cam.update();
-		batch.setProjectionMatrix(cam.combined);
+		
+		titleTex = new Texture("dont_funk_with_me_title.png");
+		titleBackgroundTex = new Texture("dance_floor.jpeg");
+		startFightSelectedTex = new Texture("start_selected.png");
+		startFightUnselectedTex = new Texture("start_unselected.png");
+		exitSelectedTex = new Texture("exit_selected.png");
+		exitUnselectedTex = new Texture("exit_unselected.png");
+		
+		titleCam = new OrthographicCamera(WIDTH, HEIGHT);
+		titleCam.translate(WIDTH/2, HEIGHT/2);
+		titleCam.update();
+		batch.setProjectionMatrix(titleCam.combined);
+		
+		fightCam = new OrthographicCamera(WIDTH, HEIGHT);
+		fightCam.translate(WIDTH/2, HEIGHT/2);
+		fightCam.update();
+		//batch.setProjectionMatrix(fightCam.combined);
 		drawer1 = new ImageBasedScreenObjectDrawer(batch);
 		drawer2 = new ImageBasedScreenObjectDrawer(batch);
 		platformDrawer = new ImageBasedScreenObjectDrawer(batch);
 		isRoundOver = false;
+		inFight = false; // start at title menu - not actively fighting -> lock the same keys used to fight and only use to navigate title menu
 		//player1OnGround = true;
 		//player1ReachedMax = false;
 		isPlayer1Blocking = false;
@@ -249,6 +266,9 @@ public class DontFunkWithMe extends ApplicationAdapter {
 		player1Health = 100;
 		player2Health = 100;
 		
+		titleMusic = Gdx.audio.newMusic(Gdx.files.internal("audio/title_screen_02_disco_bass_loop_120_bpm_josefpres.wav"));
+		titleMusic.setLooping(true);
+		
 		// instantiating the background fight music for The King's map
 		// the music continually loops
 		fightMusic = Gdx.audio.newMusic(Gdx.files.internal("audio/the_king_kb11_BSB.wav"));
@@ -320,7 +340,7 @@ public class DontFunkWithMe extends ApplicationAdapter {
 		 * to wherever the "action is happening"
 		 * */
 		
-		edgeHandler = new EdgeHandler(player1, cam, batch, 0, theKingMapTex.getWidth(), 0, theKingMapTex.getHeight(), 0, EdgeHandler.EdgeConstants.PAN, EdgeHandler.EdgeConstants.PAN);
+		edgeHandler = new EdgeHandler(player1, fightCam, batch, 0, theKingMapTex.getWidth(), 0, theKingMapTex.getHeight(), 0, EdgeHandler.EdgeConstants.PAN, EdgeHandler.EdgeConstants.PAN);
 		
 		fiaPlayer1 = new FighterInputAdapter(player1, johnnyDBlockAnim, johnnyDRevBlockAnim);
 		//fiaPlayer2 = new FighterInputAdapter(player2);
@@ -328,7 +348,7 @@ public class DontFunkWithMe extends ApplicationAdapter {
 		//plexi.addProcessor(fiaPlayer1);
 		//plexi.addProcessor(fiaPlayer2);
 		Gdx.input.setInputProcessor(fiaPlayer1);
-		fightMusic.play();
+		//fightMusic.play();
 		start();
 		
 		System.out.println(player1.getDrawStartX());
@@ -347,166 +367,217 @@ public class DontFunkWithMe extends ApplicationAdapter {
 		return deltaList[deltaY];
 	}
 	
-	@Override
-	public void render () {
+	/*
+	 * Title
+	 * 
+	 * Three buttons - the first one is already highlighted:
+	 * Start Fight
+	 * Settings
+	 * Exit
+	 * */
+	
+	public void renderTitle() {
+		Gdx.gl.glClearColor(1, 0, 0, 1);
+		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+		
+		batch.begin();
+		batch.draw(titleBackgroundTex, -160, 0);
+		batch.draw(titleTex, 200, 490);
+		if (selectIncrementVal % 2 == 0) { // start fight button selected
+			batch.draw(startFightSelectedTex, 330, 300);
+			batch.draw(exitUnselectedTex, 330, 100);
+		} else if (selectIncrementVal % 2 == 1) { // exit button selected
+			batch.draw(startFightUnselectedTex, 330, 300);
+			batch.draw(exitSelectedTex, 330, 100);
+		}
+	
+		if ((Gdx.input.isKeyJustPressed(Keys.W)) || (Gdx.input.isKeyJustPressed(Keys.S))) {
+			selectIncrementVal++;
+		} /*else if (Gdx.input.isKeyJustPressed(Keys.S)) {
+			selectIncrementVal++;
+		}*/
+		
+		// selected "start fight"
+		if ((Gdx.input.isKeyJustPressed(Keys.C)) && (selectIncrementVal % 2 == 0)){
+			mode = 1;
+			inFight = true;
+		} else if ((Gdx.input.isKeyJustPressed(Keys.C)) && (selectIncrementVal % 2 == 1)) {
+			Gdx.app.exit();
+		}
+		batch.end();
+	}
+	
+	public void renderFight() {
 		float dt = Gdx.graphics.getDeltaTime();
-		player1Label.setPosition(20+(cam.position.x-WIDTH/2), 620+(cam.position.y-HEIGHT/2));
-		player2Label.setPosition(850+(cam.position.x-WIDTH/2), 620+(cam.position.y-HEIGHT/2)); // adjust the x depending on character name lengths
+		player1Label.setPosition(20+(fightCam.position.x-WIDTH/2), 620+(fightCam.position.y-HEIGHT/2));
+		player2Label.setPosition(850+(fightCam.position.x-WIDTH/2), 620+(fightCam.position.y-HEIGHT/2)); // adjust the x depending on character name lengths
 		
 		
 		Gdx.gl.glClearColor(1, 0, 0, 1);
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 		
-		/*
-		 * Player 1 Controls:
-		 * A - Move left
-		 * D - Move right
-		 * W - Jump
-		 * S - Duck (technically, the block button)
-		 * C - Punch
-		 * V - Kick
-		 */
-		
-		
-		// move to the left
-		if (Gdx.input.isKeyPressed(Keys.A)) {
-			if (player1CurrAnim != johnnyDWalkAnim) {
-				player1.setAnimationParameters(johnnyDWalkAnim);
-				player1CurrAnim = johnnyDWalkAnim;
-			}
-			player1MovingLeft = true;
-			player1.setFlipX(player1MovingLeft);
-			player1.accelerateAtAngle(180);
-			System.out.printf("Player1: (%f, %f)\nPlayer2: (%f, %f)\n", player1.getXPos(), player1.getYPos(), player2.getXPos(), player2.getYPos());
+		if (Gdx.input.isKeyJustPressed(Keys.ESCAPE)) {
+			mode = 0;
+			inFight = false;
 		}
 		
-		// move to the right
-		if (Gdx.input.isKeyPressed(Keys.D)) {
-			if (player1CurrAnim != johnnyDWalkAnim) {
-				player1.setAnimationParameters(johnnyDWalkAnim);
-				player1CurrAnim = johnnyDWalkAnim;
-			}
-			player1MovingLeft = false;
-			player1.setFlipX(player1MovingLeft);
-			player1.accelerateAtAngle(0);
-			System.out.printf("Player1: (%f, %f)\nPlayer2: (%f, %f)\n", player1.getXPos(), player1.getYPos(), player2.getXPos(), player2.getYPos());
-		}
-		
-		// to jump
-		if (Gdx.input.isKeyJustPressed(Keys.W)) {
-			player1.jump();
-			//player1.applyPhysics(dt);
-			//player1.moveUp(deltaY);
-			//player1OnGround = false;
-			//deltaY = 0;
-			System.out.printf("Player1: (%f, %f)\nPlayer2: (%f, %f)\n", player1.getXPos(), player1.getYPos(), player2.getXPos(), player2.getYPos());
-		}
-		
-		// to block
-		if (Gdx.input.isKeyJustPressed(Keys.S)) {
-			if (player1CurrAnim != johnnyDBlockAnim) {
-				player1.setAnimationParameters(johnnyDBlockAnim);
-				
-				fiaPlayer1.updateMobileObject(player1);
-				player1CurrAnim = johnnyDBlockAnim;
+		// must have input handler only detect S when inFight is true
+		if (inFight) {
+			/*
+			 * Player 1 Controls:
+			 * A - Move left
+			 * D - Move right
+			 * W - Jump
+			 * S - Duck (technically, the block button)
+			 * C - Punch
+			 * V - Kick
+			 */
+			
+			// move to the left
+			if (Gdx.input.isKeyPressed(Keys.A)) {
+				if (player1CurrAnim != johnnyDWalkAnim) {
+					player1.setAnimationParameters(johnnyDWalkAnim);
+					player1CurrAnim = johnnyDWalkAnim;
+				}
+				player1MovingLeft = true;
+				player1.setFlipX(player1MovingLeft);
+				player1.accelerateAtAngle(180);
+				System.out.printf("Player1: (%f, %f)\nPlayer2: (%f, %f)\n", player1.getXPos(), player1.getYPos(), player2.getXPos(), player2.getYPos());
 			}
 			
-			//if (player1.is)
-			//player1.accelerateAtAngle(270);
-			//player1.startDiscreteAnimation();
-		}
-		
-		// to punch
-		if (Gdx.input.isKeyJustPressed(Keys.C)) {
-			if (player1CurrAnim != johnnyDPunchAnim) {
-				player1.setAnimationParameters(johnnyDPunchAnim);
-				player1CurrAnim = johnnyDPunchAnim;
-			}			
-			player1.startDiscreteAnimation();
-			//player1.accelerateAtAngle(0);
-			if (player1.overlaps(player2) && !isPlayer2Blocking) {
-				System.out.println("Player 1 got 'em with the Dab");
-				player2Health -= 5;
-				//Vector2 collide = player1.preventOverlap(player2);
-				//player2.rebound(collide.angle(), 1.0f);
-				
-				if (player1MovingLeft) {
-					//int tempSpeed = player2;
-					player2.rebound(180, 0.5f);
-					//player2.accelerateForward();
-					//player2.applyPhysics(dt);
-					//player2.accelerateAtAngle(180);
-				} else {
-					player2.rebound(0, 0.5f);
-					//player2.accelerateForward();
-					//player2.applyPhysics(dt);
-					//player2.accelerateAtAngle(0);
+			// move to the right
+			if (Gdx.input.isKeyPressed(Keys.D)) {
+				if (player1CurrAnim != johnnyDWalkAnim) {
+					player1.setAnimationParameters(johnnyDWalkAnim);
+					player1CurrAnim = johnnyDWalkAnim;
+				}
+				player1MovingLeft = false;
+				player1.setFlipX(player1MovingLeft);
+				player1.accelerateAtAngle(0);
+				System.out.printf("Player1: (%f, %f)\nPlayer2: (%f, %f)\n", player1.getXPos(), player1.getYPos(), player2.getXPos(), player2.getYPos());
+			}
+			
+			// to jump
+			if (Gdx.input.isKeyJustPressed(Keys.W)) {
+				player1.jump();
+				//player1.applyPhysics(dt);
+				//player1.moveUp(deltaY);
+				//player1OnGround = false;
+				//deltaY = 0;
+				System.out.printf("Player1: (%f, %f)\nPlayer2: (%f, %f)\n", player1.getXPos(), player1.getYPos(), player2.getXPos(), player2.getYPos());
+			}
+			
+			// to block
+			if (Gdx.input.isKeyJustPressed(Keys.S)) {
+				if (player1CurrAnim != johnnyDBlockAnim) {
+					player1.setAnimationParameters(johnnyDBlockAnim);
+					
+					fiaPlayer1.updateMobileObject(player1);
+					player1CurrAnim = johnnyDBlockAnim;
 				}
 				
+				//if (player1.is)
+				//player1.accelerateAtAngle(270);
+				//player1.startDiscreteAnimation();
 			}
-		}
-		
-		// to kick
-		if (Gdx.input.isKeyJustPressed(Keys.V)) {
-			if (player1CurrAnim != johnnyDKickAnim) {
-				player1.setAnimationParameters(johnnyDKickAnim);
-				player1CurrAnim = johnnyDKickAnim;
-			}
-			player1.startDiscreteAnimation();
-			player1.accelerateAtAngle(0);
-			if (player1.overlaps(player2) && !isPlayer2Blocking) {
-				System.out.println("Player 1 got 'em with that Superman kick");
-				player2Health -= 10;
-				if (player1MovingLeft) {
-					player2.rebound(180, 1.0f);
-				} else {
-					player2.rebound(0, 1.0f);
+			
+			// to punch
+			if (Gdx.input.isKeyJustPressed(Keys.C)) {
+				if (player1CurrAnim != johnnyDPunchAnim) {
+					player1.setAnimationParameters(johnnyDPunchAnim);
+					player1CurrAnim = johnnyDPunchAnim;
+				}			
+				player1.startDiscreteAnimation();
+				//player1.accelerateAtAngle(0);
+				if (player1.overlaps(player2) && !isPlayer2Blocking) {
+					System.out.println("Player 1 got 'em with the Dab");
+					player2Health -= 5;
+					//Vector2 collide = player1.preventOverlap(player2);
+					//player2.rebound(collide.angle(), 1.0f);
+					
+					if (player1MovingLeft) {
+						//int tempSpeed = player2;
+						player2.rebound(180, 0.5f);
+						//player2.accelerateForward();
+						//player2.applyPhysics(dt);
+						//player2.accelerateAtAngle(180);
+					} else {
+						player2.rebound(0, 0.5f);
+						//player2.accelerateForward();
+						//player2.applyPhysics(dt);
+						//player2.accelerateAtAngle(0);
+					}
+					
+					//boolean kicking
+					// boolean punching
+					// initboundingpolygon -> initboundingpolygon with diff array (kicking leg out and standing tall)
+					
 				}
 			}
-		}
-		
-		// applyPhysics is needed for Jump animation
-		player1.applyPhysics(dt);
-		player2.applyPhysics(dt);
-		//player1.preventOverlap(platform);
-		
-		/* TODO
-		 * Player 2 Controls:
-		 * J - Move left
-		 * L - Move right
-		 * I - Jump
-		 * K - Duck (technically, the block button)
-		 * . - Punch
-		 * / - Kick
-		 * */
-		
-		// move to the left
-		if (Gdx.input.isKeyPressed(Keys.J)) {
-			if (player2CurrAnim != theKingWalkAnim) {
-				player2.setDiscreteAnimation(false);
-				player2.setAnimationParameters(theKingWalkAnim);
-				player2CurrAnim = theKingWalkAnim;
+			
+			// to kick
+			if (Gdx.input.isKeyJustPressed(Keys.V)) {
+				if (player1CurrAnim != johnnyDKickAnim) {
+					player1.setAnimationParameters(johnnyDKickAnim);
+					player1CurrAnim = johnnyDKickAnim;
+				}
+				player1.startDiscreteAnimation();
+				player1.accelerateAtAngle(0);
+				if (player1.overlaps(player2) && !isPlayer2Blocking) {
+					System.out.println("Player 1 got 'em with that Superman kick");
+					player2Health -= 10;
+					if (player1MovingLeft) {
+						player2.rebound(180, 1.0f);
+					} else {
+						player2.rebound(0, 1.0f);
+					}
+				}
 			}
-			player2MovingLeft = true;
-			player2.setFlipX(player2MovingLeft);
-			player2.accelerateAtAngle(180);
-			//player2.animate(dt);
-			//player2.setXPos(player2.getXPos() - 5);
+			
+			// applyPhysics is needed for Jump animation
+			player1.applyPhysics(dt);
+			player2.applyPhysics(dt);
+			//player1.preventOverlap(platform);
+			
+			/* TODO
+			 * Player 2 Controls:
+			 * J - Move left
+			 * L - Move right
+			 * I - Jump
+			 * K - Duck (technically, the block button)
+			 * . - Punch
+			 * / - Kick
+			 * */
+			
+			// move to the left
+			if (Gdx.input.isKeyPressed(Keys.J)) {
+				if (player2CurrAnim != theKingWalkAnim) {
+					player2.setDiscreteAnimation(false);
+					player2.setAnimationParameters(theKingWalkAnim);
+					player2CurrAnim = theKingWalkAnim;
+				}
+				player2MovingLeft = true;
+				player2.setFlipX(player2MovingLeft);
+				player2.accelerateAtAngle(180);
+				//player2.animate(dt);
+				//player2.setXPos(player2.getXPos() - 5);
+			}
+			
+			// move to the right
+			if (Gdx.input.isKeyPressed(Keys.L)) {
+				if (player2CurrAnim != theKingWalkAnim) {
+					player2.setDiscreteAnimation(false);
+					player2.setAnimationParameters(theKingWalkAnim);
+					player2CurrAnim = theKingWalkAnim;
+				}
+				player2MovingLeft = false;
+				player2.setFlipX(player2MovingLeft);
+				//player2.animate(dt);
+				//player2.setXPos(player2.getXPos() + 5);
+				player2.accelerateAtAngle(0);
+			}
 		}
 		
-		// move to the right
-		if (Gdx.input.isKeyPressed(Keys.L)) {
-			if (player2CurrAnim != theKingWalkAnim) {
-				player2.setDiscreteAnimation(false);
-				player2.setAnimationParameters(theKingWalkAnim);
-				player2CurrAnim = theKingWalkAnim;
-			}
-			player2MovingLeft = false;
-			player2.setFlipX(player2MovingLeft);
-			//player2.animate(dt);
-			//player2.setXPos(player2.getXPos() + 5);
-			player2.accelerateAtAngle(0);
-		}
 		
 		
 		edgeHandler.enforceEdges();
@@ -516,61 +587,48 @@ public class DontFunkWithMe extends ApplicationAdapter {
 		player1Label.draw(batch, 1); // display player 1's character name
 		player2Label.draw(batch, 1); // display player 2's character name
 		//batch.draw(healthBar1Tex, 10, 660);
-		batch.draw(healthBar1Tex, 20+(cam.position.x-WIDTH/2), 660+(cam.position.y-HEIGHT/2));
+		batch.draw(healthBar1Tex, 20+(fightCam.position.x-WIDTH/2), 660+(fightCam.position.y-HEIGHT/2));
 		//batch.draw(healthBar2Tex, 600, 660);
-		batch.draw(healthBar2Tex, 590+(cam.position.x-WIDTH/2), 660+(cam.position.y-HEIGHT/2));
+		batch.draw(healthBar2Tex, 590+(fightCam.position.x-WIDTH/2), 660+(fightCam.position.y-HEIGHT/2));
 		if (player2Health <= 0) {
 			player2Health = 0;
 		}
 		
 		if (player2Health < 100 && player2Health >= 0) {
-			batch.draw(player2HealthBars.get(player2Health), 590+(cam.position.x-WIDTH/2), 660+(cam.position.y-HEIGHT/2));
+			batch.draw(player2HealthBars.get(player2Health), 590+(fightCam.position.x-WIDTH/2), 660+(fightCam.position.y-HEIGHT/2));
 		}
 		//countdownTimer.draw(batch, 1);
-		countDownLabel.setPosition(470+(cam.position.x-WIDTH/2), 660+(cam.position.y-HEIGHT/2));
+		countDownLabel.setPosition(470+(fightCam.position.x-WIDTH/2), 660+(fightCam.position.y-HEIGHT/2));
 		countDownLabel.draw(batch, 1);
 		platformDrawer.draw(platform);
 		drawer1.draw(player1); // display the sprite on the map
 		drawer2.draw(player2);
-		
-		/*
-		if (player1.getXPos() >= player2.getXOrigin() - 50) {
-			player1.setXPos(player1.getXPos());
-		}
-		
-		//platformDrawer.draw(platform);
-		if (!player1OnGround && !player1ReachedMax && delta()<233) { //player1.getYPos() < 500
-			player1.moveY(delta());
-			deltaY++;
-		}
-		
-		if (!player1OnGround && delta() == 233) { //player1.getYPos() == 500
-			player1ReachedMax = true;
-			deltaY = 0;
-			
-			//deltaY = 0;
-			//player1.moveY(-1*delta());
-			
-		}
-		
-		if (player1ReachedMax) {
-			player1.moveY(-1*delta());
-			deltaY++;
-		}
-		
-		if (player1ReachedMax && player1.getYPos() == 130) { //!player1OnGround && deltaY == -1 && player1.getYPos() == 130
-			player1OnGround = true;
-			player1ReachedMax = false;
-			deltaY = 0;
-		}
-		*/
 		batch.end();
-		/*
-		if (currAnim == kickAnim && player1.getCurrentFrame() == 2) {
-			player1.setAnimationParameters(walkAnim);
-			currAnim = walkAnim;
-		}
-		*/
+	}
+	
+	@Override
+	public void render () {
+		 if (mode == 0){
+		 	renderTitle();
+		 	
+		 	if (fightMusic.isPlaying()) {
+		 		fightMusic.stop();
+		 	}
+		 	
+		 	titleMusic.play();
+		 	batch.setProjectionMatrix(titleCam.combined);
+		 } else if (mode == 1){ // if there is time, mode == 1 is for Settings
+		 	renderFight();
+		 	
+		 	if (titleMusic.isPlaying()) {
+		 		titleMusic.stop();
+		 	}
+		 	
+		 	fightMusic.play();
+		 } /*else {
+		 	renderFight();
+		 }*/
+		
 	}
 	
 	@Override
@@ -578,5 +636,36 @@ public class DontFunkWithMe extends ApplicationAdapter {
 		batch.dispose();
 		theKingMapTex.dispose();
 		fightMusic.dispose();
+		titleTex.dispose();
+		titleBackgroundTex.dispose();
+		startFightSelectedTex.dispose();
+		startFightUnselectedTex.dispose();
+		exitSelectedTex.dispose();
+		exitUnselectedTex.dispose();
+		johnnyDTex.dispose();
+		theKingTex.dispose();
+		healthBar1Tex.dispose();
+		healthBar2Tex.dispose();
+		theKingPlatformTex.dispose(); 
+		health95.dispose();
+		health90.dispose();
+		health85.dispose();
+		health80.dispose();
+		health75.dispose();
+		health70.dispose();
+		health65.dispose();
+		health60.dispose();
+		health55.dispose();
+		health50.dispose();
+		health45.dispose();
+		health40.dispose();
+		health35.dispose();
+		health30.dispose();
+		health25.dispose();
+		health20.dispose();
+		health15.dispose();
+		health10.dispose();
+		health5.dispose();
+		health0.dispose();
 	}
 }
