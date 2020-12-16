@@ -27,28 +27,52 @@ import java.util.Timer;
 
 
 class FighterInputAdapter extends InputAdapter {
-	MobileImageBasedScreenObject mObj;
-	AnimationParameters animParameters;
-	AnimationParameters revAnimParameters; // reverse animation of animParameters
-	boolean isBlocking;
+	private MobileImageBasedScreenObject player1MobileObject;
+	private MobileImageBasedScreenObject player2MobileObject;
+
+	private AnimationParameters animParameters1;
+	private AnimationParameters revAnimParameters1; // reverse animation of animParameters
 	
-	public AnimationParameters getAnimParameters() {
-		return animParameters;
+	private AnimationParameters animParameters2;
+	private AnimationParameters revAnimParameters2; // reverse animation of animParameters
+	
+	private boolean isPlayer1Blocking, isPlayer2Blocking;
+	
+	public AnimationParameters getAnimParameters1() {
+		return animParameters1;
+	}
+	
+	public AnimationParameters getAnimParameters2() {
+		return animParameters2;
 	}
 
+	/*
 	public void setAnimParameters(AnimationParameters animParameters) {
 		this.animParameters = animParameters;
 	}
+	*/
 	
-	public FighterInputAdapter(MobileImageBasedScreenObject mObj) {
-		this.mObj = mObj;
-		animParameters = null;
+	public FighterInputAdapter(MobileImageBasedScreenObject player1MobileObject, MobileImageBasedScreenObject player2MobileObject, AnimationParameters animParameters1,
+			AnimationParameters revAnimParameters1, AnimationParameters animParameters2, AnimationParameters revAnimParameters2) {
+		this.player1MobileObject = player1MobileObject;
+		this.player2MobileObject = player2MobileObject;
+		this.animParameters1 = animParameters1;
+		this.revAnimParameters1 = revAnimParameters1;
+		this.animParameters2 = animParameters2;;
+		this.revAnimParameters2 = revAnimParameters2;
+		isPlayer1Blocking = false;
+		isPlayer2Blocking = false;
 	}
 	
-	public void updateMobileObject(MobileImageBasedScreenObject mObj) {
-		this.mObj = mObj;
+	public void updatePlayer1MobileObject(MobileImageBasedScreenObject player1MobileObject) {
+		this.player1MobileObject = player1MobileObject;
 	}
 	
+	public void updatePlayer2MobileObject(MobileImageBasedScreenObject player2MobileObject) {
+		this.player2MobileObject = player2MobileObject;
+	}
+	
+	/*
 	public FighterInputAdapter(MobileImageBasedScreenObject mObj, AnimationParameters animParameters, AnimationParameters revAnimParameters) {
 		this.mObj = mObj;
 		this.animParameters = animParameters;
@@ -58,10 +82,14 @@ class FighterInputAdapter extends InputAdapter {
 		
 		//for (int i=0; i < animParameters.getFrameSequence().length)
 		
+	}*/
+	
+	public boolean isPlayer1Blocking() {
+		return isPlayer1Blocking;
 	}
 	
-	public boolean isBlocking() {
-		return isBlocking;
+	public boolean isPlayer2Blocking() {
+		return isPlayer2Blocking;
 	}
 	
 	@Override
@@ -74,12 +102,21 @@ class FighterInputAdapter extends InputAdapter {
 				player1CurrAnim = johnnyDBlockAnim;
 			}*/
 			
-			if (mObj.getAnimationParameters() != animParameters) {
-				mObj.setAnimationParameters(animParameters);
+			if (player1MobileObject.getAnimationParameters() != animParameters1) {
+				player1MobileObject.setAnimationParameters(animParameters1);
 			}
 			//player1.accelerateAtAngle(270);
-			mObj.startDiscreteAnimation();
-			isBlocking =  true;
+			player1MobileObject.startDiscreteAnimation();
+			isPlayer1Blocking =  true;
+		}
+		
+		if (keyCode == Keys.K) {
+			if (player2MobileObject.getAnimationParameters() != animParameters2) {
+				player2MobileObject.setAnimationParameters(animParameters2);
+			}
+			//player1.accelerateAtAngle(270);
+			player2MobileObject.startDiscreteAnimation();
+			isPlayer2Blocking =  true;
 		}
 		
 		return true;
@@ -95,12 +132,21 @@ class FighterInputAdapter extends InputAdapter {
 				player1CurrAnim = johnnyDBlockAnim;
 			}
 			*/
-			if (mObj.getAnimationParameters() != revAnimParameters) {
-				mObj.setAnimationParameters(revAnimParameters);
+			if (player1MobileObject.getAnimationParameters() != revAnimParameters1) {
+				player1MobileObject.setAnimationParameters(revAnimParameters1);
 			}
 			//player1.accelerateAtAngle(270);
-			mObj.startDiscreteAnimation();
-			isBlocking = false;
+			player1MobileObject.startDiscreteAnimation();
+			isPlayer1Blocking = false;
+		}
+		
+		if (keyCode == Keys.K) {
+			if (player2MobileObject.getAnimationParameters() != revAnimParameters2) {
+				player2MobileObject.setAnimationParameters(revAnimParameters2);
+			}
+			//player1.accelerateAtAngle(270);
+			player2MobileObject.startDiscreteAnimation();
+			isPlayer2Blocking = false;
 		}
 		
 		return true;
@@ -123,29 +169,40 @@ public class DontFunkWithMe extends ApplicationAdapter {
 	OrthographicCamera fightCam, titleCam;
 	int WIDTH, HEIGHT, seconds, player1Health, player2Health;
 	float FRAME_WIDTH, FRAME_HEIGHT, ANIM_DELAY;
-	int[] player1WalkSeq = {0,0,1,0,2,0}; // follows the order for each different movement - only for Johnny Dansalot
-	int[] player1PunchSeq = {0,1,1,1,2,1};
-	int[] player1KickSeq = {0,2,1,2,2,2};
-	int[] player1BlockSeq = {0,3,1,3,2,3};
-	int[] player1RevBlockSeq = {2,3,1,3,0,3}; //2,3,1,3,0,3
 	
-	int[] deltaList = {0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233};//{0,1,4,9,16,25,36,49,64,81,100,121}{0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21};
+	AnimationParameters johnnyDWalkAnim, johnnyDPunchAnim, johnnyDKickAnim, johnnyDBlockAnim, johnnyDRevBlockAnim, johnnyDPunchLandedAnim, johnnyDKickLandedAnim, player1CurrAnim;
+	int[] johnnyDWalkSeq = {0,0,1,0,2,0}; // follows the order for each different movement - only for Johnny Dansalot
+	int[] johnnyDPunchSeq = {3,0,0,1,1,1};//{0,1,1,1,2,1}
+	int[] johnnyDKickSeq = {2,1,3,1,0,2};//{0,2,1,2,2,2};
+	int[] johnnyDBlockSeq = {1,2,2,2,3,2};//{0,3,1,3,2,3};
+	int[] johnnyDRevBlockSeq = {3,2,2,2,1,2}; //{2,3,1,3,0,3} 2,3,1,3,0,3
+	int[] johnnyDPunchLandedSeq = {0,3,1,3};
+	int[] johnnyDKickLandedSeq = {0,3,1,3,2,3,3,3};
+	
+	AnimationParameters theKingWalkAnim, theKingPunchAnim, theKingKickAnim, theKingBlockAnim, theKingRevBlockAnim, theKingPunchLandedAnim, theKingKickLandedAnim, player2CurrAnim;
+	int[] theKingWalkSeq = {0,0,1,0,2,0,3,0}; // only for The King
+	int[] theKingPunchSeq = {0,1,1,1,2,1};
+	int[] theKingKickSeq = {3,1,0,2,1,2,2,2};
+	int[] theKingBlockSeq = {3,2,0,3,1,3};
+	int[] theKingRevBlockSeq = {1,3,0,3,3,2};
+	int[] theKingPunchLandedSeq = {2,3,3,3};
+	int[] theKingKickLandedSeq = {2,3,3,3,0,4,1,4};
+	
+	//int[] deltaList = {0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233};//{0,1,4,9,16,25,36,49,64,81,100,121}{0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21};
 	
 	ArrayList<ImageBasedScreenObject> platforms = new ArrayList<ImageBasedScreenObject>();
 	
-	int[] player2WalkSeq = {0,0,1,0,2,0,3,0}; // only for The King
 	ActionLabel player1Label, player2Label;//, countdownTimer;
 	Music titleMusic, fightMusic; // the background fight music
 	boolean player1MovingLeft, inFight, isRoundOver, player2MovingLeft, isPlayer1Blocking, isPlayer2Blocking;//player1OnGround, player1ReachedMax;
-	int deltaY = 0;
-	int mode = 0; // 0 - title, 1 - settings, 2 - fight
+	//int deltaY = 0;
+	int screen = 0; // 0 - title, 1 - settings, 2 - fight
 	int selectIncrementVal = 0; // used to increment when player loops through title screen buttons
+	//int player1DecHealthBarPos = 
 	Timer timer;
 	TimerTask timerTask;
 	LabelStyle style = new LabelStyle();
 	Label countDownLabel;
-	AnimationParameters johnnyDWalkAnim, johnnyDPunchAnim, johnnyDKickAnim, johnnyDBlockAnim, johnnyDRevBlockAnim, player1CurrAnim;
-	AnimationParameters theKingWalkAnim, player2CurrAnim;
 	
 	EdgeHandler edgeHandler;
 	InputMultiplexer plexi;
@@ -302,19 +359,23 @@ public class DontFunkWithMe extends ApplicationAdapter {
 		//player1 = new AnimatedImageBasedScreenObject(johnnyDTex, 600, 130, 0, 0, 0, 10, 10, player1MovingLeft, false, FRAME_WIDTH, FRAME_HEIGHT, player1WalkSeq, ANIM_DELAY);
 		//player1 = new MobileImageBasedScreenObject(johnnyDTex, 600, 130, 0, 0, 0, 10, 10, player1MovingLeft, false, FRAME_WIDTH, FRAME_HEIGHT, player1WalkSeq, ANIM_DELAY);
 		//player1 = new PlatformCharacter(johnnyDTex, 600, 140, 0, 0, 0, 1, 1, player1MovingLeft, false, FRAME_WIDTH, FRAME_HEIGHT, player1WalkSeq, ANIM_DELAY, 50, 100, 150,platforms);//platforms
-		player1 = new PlatformCharacter(johnnyDTex, 600,140,true);
+		player1 = new PlatformCharacter(johnnyDTex, 240,140,true);
 		player1.setAcceleration(500);
 		player1.setDeceleration(1000);
 		player1.setMaxSpeed(300);
-		johnnyDWalkAnim = new AnimationParameters(FRAME_WIDTH, FRAME_HEIGHT, player1WalkSeq, ANIM_DELAY);
-		johnnyDPunchAnim = new AnimationParameters(FRAME_WIDTH, FRAME_HEIGHT, player1PunchSeq, ANIM_DELAY);
+		johnnyDWalkAnim = new AnimationParameters(FRAME_WIDTH, FRAME_HEIGHT, johnnyDWalkSeq, ANIM_DELAY);
+		johnnyDPunchAnim = new AnimationParameters(FRAME_WIDTH, FRAME_HEIGHT, johnnyDPunchSeq, ANIM_DELAY);
 		johnnyDPunchAnim.setDiscrete(true);
-		johnnyDKickAnim = new AnimationParameters(FRAME_WIDTH, FRAME_HEIGHT, player1KickSeq, 0.1f); // 0.2f
+		johnnyDKickAnim = new AnimationParameters(FRAME_WIDTH, FRAME_HEIGHT, johnnyDKickSeq, 0.1f); // 0.2f
 		johnnyDKickAnim.setDiscrete(true);
-		johnnyDBlockAnim = new AnimationParameters(FRAME_WIDTH, FRAME_HEIGHT, player1BlockSeq, ANIM_DELAY);
+		johnnyDBlockAnim = new AnimationParameters(FRAME_WIDTH, FRAME_HEIGHT, johnnyDBlockSeq, ANIM_DELAY);
 		johnnyDBlockAnim.setDiscrete(true);
-		johnnyDRevBlockAnim = new AnimationParameters(FRAME_WIDTH, FRAME_HEIGHT, player1RevBlockSeq, ANIM_DELAY);
+		johnnyDRevBlockAnim = new AnimationParameters(FRAME_WIDTH, FRAME_HEIGHT, johnnyDRevBlockSeq, ANIM_DELAY);
 		johnnyDRevBlockAnim.setDiscrete(true);
+		johnnyDPunchLandedAnim = new AnimationParameters(FRAME_WIDTH, FRAME_HEIGHT, johnnyDPunchLandedSeq, ANIM_DELAY);
+		johnnyDPunchLandedAnim.setDiscrete(true);
+		johnnyDKickLandedAnim = new AnimationParameters(FRAME_WIDTH, FRAME_HEIGHT, johnnyDKickLandedSeq, ANIM_DELAY);
+		johnnyDKickLandedAnim.setDiscrete(true);
 		player1.setAnimationParameters(johnnyDWalkAnim);
 		//player1.setScaleX(10);
 		//player1.setScaleY(10);
@@ -326,13 +387,26 @@ public class DontFunkWithMe extends ApplicationAdapter {
 		//player2 = new MobileImageBasedScreenObject(theKingTex, 800, 130, 0, 0, 0, 10, 10, player2MovingLeft, false, FRAME_WIDTH, FRAME_HEIGHT, player2WalkSeq, ANIM_DELAY);
 		//player2.centerOriginGeometrically();
 		//player2 = new PlatformCharacter(theKingTex, 800, 140, 0, 0, 0, 1, 1, player2MovingLeft, false, FRAME_WIDTH, FRAME_HEIGHT, player2WalkSeq, ANIM_DELAY, 1000,400,10,platforms);
-		player2 = new PlatformCharacter(theKingTex, 800, 140, true);
+		player2 = new PlatformCharacter(theKingTex, 480, 140, true);
 		player2.setAcceleration(500);
 		player2.setDeceleration(1000);
 		player2.setMaxSpeed(300);
-		theKingWalkAnim = new AnimationParameters(FRAME_WIDTH, FRAME_HEIGHT, player2WalkSeq,ANIM_DELAY);
+		theKingWalkAnim = new AnimationParameters(FRAME_WIDTH, FRAME_HEIGHT, theKingWalkSeq, ANIM_DELAY);
+		theKingPunchAnim = new AnimationParameters(FRAME_WIDTH, FRAME_HEIGHT, theKingPunchSeq, ANIM_DELAY);
+		theKingPunchAnim.setDiscrete(true);
+		theKingKickAnim = new AnimationParameters(FRAME_WIDTH, FRAME_HEIGHT, theKingKickSeq, ANIM_DELAY);
+		theKingKickAnim.setDiscrete(true);
+		theKingBlockAnim = new AnimationParameters(FRAME_WIDTH, FRAME_HEIGHT, theKingBlockSeq, ANIM_DELAY);
+		theKingBlockAnim.setDiscrete(true);
+		theKingRevBlockAnim = new AnimationParameters(FRAME_WIDTH, FRAME_HEIGHT, theKingRevBlockSeq, ANIM_DELAY);
+		theKingRevBlockAnim.setDiscrete(true);
+		theKingPunchLandedAnim = new AnimationParameters(FRAME_WIDTH, FRAME_HEIGHT, theKingPunchLandedSeq, ANIM_DELAY);
+		theKingPunchLandedAnim.setDiscrete(true);
+		theKingKickLandedAnim = new AnimationParameters(FRAME_WIDTH, FRAME_HEIGHT, theKingKickLandedSeq, ANIM_DELAY);
+		theKingKickLandedAnim.setDiscrete(true);
 		player2.setAnimationParameters(theKingWalkAnim);
 		player2.setPlatforms(platforms);
+		player2CurrAnim = theKingWalkAnim;
 		
 		/*
 		 * TODO
@@ -342,7 +416,7 @@ public class DontFunkWithMe extends ApplicationAdapter {
 		
 		edgeHandler = new EdgeHandler(player1, fightCam, batch, 0, theKingMapTex.getWidth(), 0, theKingMapTex.getHeight(), 0, EdgeHandler.EdgeConstants.PAN, EdgeHandler.EdgeConstants.PAN);
 		
-		fiaPlayer1 = new FighterInputAdapter(player1, johnnyDBlockAnim, johnnyDRevBlockAnim);
+		fiaPlayer1 = new FighterInputAdapter(player1, player2, johnnyDBlockAnim, johnnyDRevBlockAnim, theKingBlockAnim, theKingRevBlockAnim);
 		//fiaPlayer2 = new FighterInputAdapter(player2);
 		//plexi = new InputMultiplexer();
 		//plexi.addProcessor(fiaPlayer1);
@@ -361,11 +435,14 @@ public class DontFunkWithMe extends ApplicationAdapter {
 		// every one second, count down by one second (total of 60 seconds per round)
 		
 		timer.scheduleAtFixedRate(timerTask, 3000, 1000);
+		
 	}
 	
+	/*
 	public int delta() {
 		return deltaList[deltaY];
 	}
+	*/
 	
 	/*
 	 * Title
@@ -399,7 +476,7 @@ public class DontFunkWithMe extends ApplicationAdapter {
 		
 		// selected "start fight"
 		if ((Gdx.input.isKeyJustPressed(Keys.C)) && (selectIncrementVal % 2 == 0)){
-			mode = 1;
+			screen = 1;
 			inFight = true;
 		} else if ((Gdx.input.isKeyJustPressed(Keys.C)) && (selectIncrementVal % 2 == 1)) {
 			Gdx.app.exit();
@@ -417,7 +494,8 @@ public class DontFunkWithMe extends ApplicationAdapter {
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 		
 		if (Gdx.input.isKeyJustPressed(Keys.ESCAPE)) {
-			mode = 0;
+			screen = 0;
+			timer.cancel();
 			inFight = false;
 		}
 		
@@ -472,7 +550,7 @@ public class DontFunkWithMe extends ApplicationAdapter {
 				if (player1CurrAnim != johnnyDBlockAnim) {
 					player1.setAnimationParameters(johnnyDBlockAnim);
 					
-					fiaPlayer1.updateMobileObject(player1);
+					fiaPlayer1.updatePlayer1MobileObject(player1);
 					player1CurrAnim = johnnyDBlockAnim;
 				}
 				
@@ -489,7 +567,7 @@ public class DontFunkWithMe extends ApplicationAdapter {
 				}			
 				player1.startDiscreteAnimation();
 				//player1.accelerateAtAngle(0);
-				if (player1.overlaps(player2) && !isPlayer2Blocking) {
+				if (player1.overlaps(player2) && !fiaPlayer1.isPlayer2Blocking()) {
 					System.out.println("Player 1 got 'em with the Dab");
 					player2Health -= 5;
 					//Vector2 collide = player1.preventOverlap(player2);
@@ -523,7 +601,7 @@ public class DontFunkWithMe extends ApplicationAdapter {
 				}
 				player1.startDiscreteAnimation();
 				player1.accelerateAtAngle(0);
-				if (player1.overlaps(player2) && !isPlayer2Blocking) {
+				if (player1.overlaps(player2) && !fiaPlayer1.isPlayer2Blocking()) {
 					System.out.println("Player 1 got 'em with that Superman kick");
 					player2Health -= 10;
 					if (player1MovingLeft) {
@@ -576,6 +654,62 @@ public class DontFunkWithMe extends ApplicationAdapter {
 				//player2.setXPos(player2.getXPos() + 5);
 				player2.accelerateAtAngle(0);
 			}
+			
+			// to jump
+			if (Gdx.input.isKeyJustPressed(Keys.I)) {
+				player2.jump();
+			}
+			
+			// to block
+			if (Gdx.input.isKeyJustPressed(Keys.K)) {
+				if (player2CurrAnim != theKingBlockAnim) {
+					player2.setAnimationParameters(theKingBlockAnim);
+					
+					fiaPlayer1.updatePlayer2MobileObject(player2);
+					player2CurrAnim = theKingBlockAnim;
+				}
+			}
+			
+			// to punch
+			if (Gdx.input.isKeyJustPressed(Keys.PERIOD)) {
+				if (player2CurrAnim != theKingPunchAnim) {
+					player2.setAnimationParameters(theKingPunchAnim);
+					player2CurrAnim = theKingPunchAnim;
+				}			
+				player2.startDiscreteAnimation();
+				//player1.accelerateAtAngle(0);
+				if (player2.overlaps(player1) && !fiaPlayer1.isPlayer1Blocking()) { // FIX THIS
+					System.out.println("Player 2 got 'em with the Hoho");
+					player1Health -= 5;
+					
+					if (player2MovingLeft) {
+						player1.rebound(180, 0.5f);
+					} else {
+						player1.rebound(0, 0.5f);
+					}
+				}
+			}
+			
+			// to kick
+			if (Gdx.input.isKeyJustPressed(Keys.SLASH)) {
+				if (player2CurrAnim != theKingKickAnim) {
+					player2.setAnimationParameters(theKingKickAnim);
+					player2CurrAnim = theKingKickAnim;
+				}
+				player2.startDiscreteAnimation();
+				//player2.accelerateAtAngle(0);
+				if (player2.overlaps(player1) && !fiaPlayer1.isPlayer1Blocking()) { // FIX THIS
+					System.out.println("Player 2 got 'em with that Flicking Kick");
+					player1Health -= 10;
+					if (player2MovingLeft) {
+						player1.rebound(180, 1.0f);
+					} else {
+						player1.rebound(0, 1.0f);
+					}
+				}
+			}
+			
+			
 		}
 		
 		
@@ -588,9 +722,18 @@ public class DontFunkWithMe extends ApplicationAdapter {
 		player2Label.draw(batch, 1); // display player 2's character name
 		//batch.draw(healthBar1Tex, 10, 660);
 		batch.draw(healthBar1Tex, 20+(fightCam.position.x-WIDTH/2), 660+(fightCam.position.y-HEIGHT/2));
+		if (player1Health < 0) {
+			player1Health = 0;
+		}
+		
+		if(player1Health < 100 && player1Health >= 0) {
+			int decBarLength = player1HealthBars.get(player1Health).getWidth();
+			batch.draw(player1HealthBars.get(player1Health), (370-decBarLength)+(fightCam.position.x-WIDTH/2), 660+(fightCam.position.y-HEIGHT/2));
+		}
+		
 		//batch.draw(healthBar2Tex, 600, 660);
 		batch.draw(healthBar2Tex, 590+(fightCam.position.x-WIDTH/2), 660+(fightCam.position.y-HEIGHT/2));
-		if (player2Health <= 0) {
+		if (player2Health < 0) {
 			player2Health = 0;
 		}
 		
@@ -608,7 +751,7 @@ public class DontFunkWithMe extends ApplicationAdapter {
 	
 	@Override
 	public void render () {
-		 if (mode == 0){
+		 if (screen == 0){
 		 	renderTitle();
 		 	
 		 	if (fightMusic.isPlaying()) {
@@ -617,8 +760,9 @@ public class DontFunkWithMe extends ApplicationAdapter {
 		 	
 		 	titleMusic.play();
 		 	batch.setProjectionMatrix(titleCam.combined);
-		 } else if (mode == 1){ // if there is time, mode == 1 is for Settings
+		 } else if (screen == 1){ // if there is time, mode == 1 is for Settings
 		 	renderFight();
+		 	//start();
 		 	
 		 	if (titleMusic.isPlaying()) {
 		 		titleMusic.stop();
